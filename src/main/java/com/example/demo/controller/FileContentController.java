@@ -6,41 +6,22 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
-import javax.annotation.PostConstruct;
-import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.cassandra.core.CassandraOperations;
-import org.springframework.data.cassandra.core.CassandraTemplate;
-import org.springframework.data.cassandra.core.mapping.BasicMapId;
-import org.springframework.data.cassandra.core.query.Query;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.codahale.metrics.Counter;
 import com.example.demo.model.File_Content;
 import com.example.demo.model.File_Tracking;
-import com.example.demo.repository.FileContentRepository;
-import com.example.demo.repository.FileTrackingRepository;
 
-import com.google.common.base.Charsets;
-import com.google.common.hash.Hashing;
 
 
 @RestController
 public class FileContentController {
 	@Autowired
-	private FileContentRepository repository;
-	@Autowired
-	private FileTrackingRepository track_repository;
+	private FileContentService service;
 	
 	
 	@PostMapping("/store-in-db")
@@ -55,10 +36,9 @@ public class FileContentController {
 		 */
 	
 		List<File_Content> file_content = new ArrayList<>();
-		List<File_Tracking> file_tracking = new ArrayList<>();
 		
 		// For line counts, lets use an Atomic Integer. 
-		AtomicInteger count = new AtomicInteger(0);
+		int count = 0;
 		
 		/*
 		 * Fail proof scanning wherein, even if a paragprah exceeds the size of memory available in the 
@@ -68,7 +48,7 @@ public class FileContentController {
 		 * 
 		 */
 		String filepath = dir+filename;
-		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 10*1024));
+		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 100*1024));
 		
 		/*
 		 * To keep track of a file, our file_tracking table requires a Unique Identifier. 
@@ -101,13 +81,14 @@ public class FileContentController {
 			 * and checkpoint to 0.
 			 * 
 			 */
-			if((track_repository.findByFilename(filename)==null)) {
+			
+			if(service.fileTrackFindByFileName(filename)==null) {
 				System.out.println(filename);
-				track_repository.save(new File_Tracking(filename, 0, "not done yet"));
-				id = track_repository.findByFilename(filename).getId();
+				id = service.fileTrackInsert(new File_Tracking(filename, 0, "not done yet"));
+	
 			}else {
 				
-				File_Tracking actualEntity = track_repository.findByFilename(filename);
+				File_Tracking actualEntity = service.fileTrackFindByFileName(filename);
 				// if exists, update status and continue_from.
 				status = actualEntity.getStatus();
 				continue_from = actualEntity.getCheckpointLine();
@@ -124,33 +105,24 @@ public class FileContentController {
 					
 					
 				    String line = sc.next();
-				    count.incrementAndGet();
+				    count += 1;
 				    
 				    // Continue from the checkpoint. 
-					if(count.intValue() > continue_from) {
+					if(count > continue_from) {
 						
 						
 						// Storing the above arraylist comprising of file_name, line_count and the line into the table.
-						file_content.add(new File_Content(filename,count.intValue(),line)); 
+						file_content.add(new File_Content(filename,count,line)); 
 					    
 					    // Storing in batches of size 10000 (sentences).
-					    if(count.intValue() %10000==0) {
-					    repository.saveAll(file_content);
+					    if(count % 10000==0) {
 					    
+					    service.fileSentenceInsert(file_content);
 					    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
 					    
-					    File_Tracking entry = track_repository.findById(id);
-					    System.out.println(entry.getFilename());
-					    
-					    entry.setCheckpointLine(count.intValue());
-					    entry.setStatus("Not done yet");
-					    track_repository.save(entry);
-//					    file_tracking.add(new File_Tracking(uniqueId, filename, count.intValue(), "Not done yet"));
-//					    track_repository.saveAll(file_tracking);
-					    
-					    // Clear the arraylist after current batch is stored.
+					    service.fileTrackingUpdate(id, count);
 					    file_content.clear(); 
-					    continue_from = count.intValue();
+					    continue_from = count;
 					    }
 				    }
 				}
@@ -159,16 +131,9 @@ public class FileContentController {
 				 * To store remaining content and also if the total number of lines was lesser than 10000:
 				 */
 				if(file_content.size()>0) {
-					repository.saveAll(file_content);
+					service.fileSentenceInsert(file_content);
 				}
-				File_Tracking entry = track_repository.findById(id);
-			    
-			    entry.setCheckpointLine(count.intValue());
-			    entry.setStatus("done");
-			    track_repository.save(entry);
-				// Finally, lets change  the status to "done" and also update the checkpoint value to final line.
-//				file_tracking.add(new File_Tracking(uniqueId, filename, count.intValue(), "done"));
-//				track_repository.saveAll(file_tracking);
+				service.fileTrackingUpdate(id, count);
 				}
 			else 
 			{ 
