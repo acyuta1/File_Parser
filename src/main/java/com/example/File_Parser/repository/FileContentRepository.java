@@ -1,12 +1,10 @@
-package com.example.demo.repository;
+package com.example.File_Parser.repository;
 
 import java.util.List;
 
 import org.springframework.data.cassandra.repository.CassandraRepository;
 
-//import com.example.demo.model.FileContent;
-//import com.example.demo.model.User;
-import com.example.demo.model.File_Content;
+import com.example.File_Parser.model.File_Content;
 
 public interface FileContentRepository extends CassandraRepository<File_Content, String>{
 

@@ -1,17 +1,14 @@
-package com.example.demo.controller;
+package com.example.File_Parser.controller;
 
 import java.util.List;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.model.File_Content;
-import com.example.demo.model.File_Tracking;
-import com.example.demo.repository.FileContentRepository;
-import com.example.demo.repository.FileTrackingRepository;
+import com.example.File_Parser.model.File_Content;
+import com.example.File_Parser.model.File_Tracking;
+import com.example.File_Parser.repository.FileContentRepository;
+import com.example.File_Parser.repository.FileTrackingRepository;
 
 
 @Service
@@ -45,7 +42,11 @@ public class FileContentService {
 	    track_repository.save(entry);
 	}
 	
-	public File_Tracking fileTrackingInit(String filename) {
+	public File_Tracking getFileStatusByID(int id) {
+		return track_repository.findById(id);
+	}
+	
+	public File_Tracking getfileTrackingStatus(String filename) {
 		/*
 		 * If ID of the file (hash value) is already present in our file_tracking table,
 			 * then we would just get hold of the "status" and the "checkpoint" columns of our table.
@@ -66,6 +67,7 @@ public class FileContentService {
 			return actualEntity;
 		}
 	}
+	
 	
 
 }

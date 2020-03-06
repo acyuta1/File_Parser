@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+package com.example.File_Parser.controller;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,13 +9,14 @@ import java.util.List;
 import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.model.File_Content;
-import com.example.demo.model.File_Tracking;
+import com.example.File_Parser.model.File_Content;
+import com.example.File_Parser.model.File_Tracking;
 
 
 
@@ -24,10 +25,9 @@ public class FileContentController {
 	@Autowired
 	private FileContentService service;
 	
-	
 	@PostMapping("/store-in-db")
 	@ResponseBody
-	public void saveFileContent(String filepath ) throws IOException {
+	public File_Tracking saveFileContent(String filepath ) throws IOException {
 		/*
 		 * 1. Reads a file, stores its name which will be the partition key of our table. 
 		 * 2. Scans in chunks, 10mb and stores that in our buffer until used. 
@@ -44,14 +44,11 @@ public class FileContentController {
 		/*
 		 * Fail proof scanning wherein, even if a paragprah exceeds the size of memory available in the 
 		 * local system, will not affect the process.
-		 * Achieved using scanner which scans in chunks every 10Mb. Splits the paragraphs based on the 
+		 * Achieved using scanner which scans in 10Mb chunks. Splits the paragraphs based on the 
 		 * occurrence of "." and stores in the table.
-		 * 
 		 */
-		
-		
+
 		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 100*1024));
-		
 		
 		/*
 		 * Status - Status of the file upload to the database. Can either be "done" or "not done yet". 
@@ -75,7 +72,7 @@ public class FileContentController {
 			 * long time = System.nanoTime() - start; 
 			 */
 			
-			File_Tracking entry = service.fileTrackingInit(filepath);
+			File_Tracking entry = service.getfileTrackingStatus(filepath);
 			id = entry.getId();
 			status = entry.getStatus();
 			continue_from = entry.getCheckpointLine();
@@ -94,20 +91,19 @@ public class FileContentController {
 				    
 				    // Continue from the checkpoint. 
 					if(count > continue_from) {
-						
-						
+	
 						// Storing the above arraylist comprising of file_name, line_count and the line into the table.
 						file_content.add(new File_Content(filepath,count,line)); 
 					    
-					    // Storing in batches of size 10000 (sentences).
 					    if(count % 10000==0) {
+					    // Storing in batches of size 10000 (sentences).
 					    
-					    service.fileSentenceInsert(file_content);
-					    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
-					    
-					    service.fileTrackingUpdate(id, count, "Not done yet");
-					    file_content.clear(); 
-					    continue_from = count;
+						    service.fileSentenceInsert(file_content);
+						    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
+						    
+						    service.fileTrackingUpdate(id, count, "Not done yet");
+						    file_content.clear(); 
+						    continue_from = count;
 					    }
 				    }
 				}
@@ -118,6 +114,7 @@ public class FileContentController {
 				if(file_content.size()>0) {
 					service.fileSentenceInsert(file_content);
 				}
+				// Final status to Done.
 				service.fileTrackingUpdate(id, count, "done");
 				}
 			else 
@@ -131,6 +128,13 @@ public class FileContentController {
 			sc.close();
 		}
 		
+		return service.getfileTrackingStatus(filepath);
+		
+	}
+	
+	@GetMapping("/getStatus/{id}")
+	public File_Tracking getTrackStatus(@PathVariable("id") int id) {
+		return service.getFileStatusByID(id);
 	}
 	
 

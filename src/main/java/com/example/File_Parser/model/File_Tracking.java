@@ -1,4 +1,4 @@
-package com.example.demo.model;
+package com.example.File_Parser.model;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -6,11 +6,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 //import org.springframework.data.cassandra.core.mapping.Table;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 //import javax.persistence.GeneratedValue

@@ -1,4 +1,4 @@
-package com.example.demo.model;
+package com.example.File_Parser.model;
 
 import java.util.UUID;
 
