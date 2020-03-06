@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,7 +27,7 @@ public class FileContentController {
 	
 	@PostMapping("/store-in-db")
 	@ResponseBody
-	public void saveFileContent(String dir, String filename ) throws IOException {
+	public void saveFileContent(String filepath ) throws IOException {
 		/*
 		 * 1. Reads a file, stores its name which will be the partition key of our table. 
 		 * 2. Scans in chunks, 10mb and stores that in our buffer until used. 
@@ -47,13 +48,9 @@ public class FileContentController {
 		 * occurrence of "." and stores in the table.
 		 * 
 		 */
-		String filepath = dir+filename;
-		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 100*1024));
 		
-		/*
-		 * To keep track of a file, our file_tracking table requires a Unique Identifier. 
-		 * Hash of the file name will be the unique Id (primary key of the file_tracking table).
-		 */
+		
+		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 100*1024));
 		
 		
 		/*
@@ -74,26 +71,14 @@ public class FileContentController {
 			sc.useDelimiter("\\.");
 			
 			/*
-			 * If ID of the file (hash value) is already present in our file_tracking table,
-			 * then we would just get hold of the "status" and the "checkpoint" columns of our table.
-			 * 
-			 * Else, we would make a new entry in the file_tracking table and initialize status to "not done yet"
-			 * and checkpoint to 0.
-			 * 
+			 * fileTrackingInit of the service layer is used to initialize id, status and continue_from
+			 * long time = System.nanoTime() - start; 
 			 */
 			
-			if(service.fileTrackFindByFileName(filename)==null) {
-				System.out.println(filename);
-				id = service.fileTrackInsert(new File_Tracking(filename, 0, "not done yet"));
-	
-			}else {
-				
-				File_Tracking actualEntity = service.fileTrackFindByFileName(filename);
-				// if exists, update status and continue_from.
-				status = actualEntity.getStatus();
-				continue_from = actualEntity.getCheckpointLine();
-				id = actualEntity.getId();
-			}
+			File_Tracking entry = service.fileTrackingInit(filepath);
+			id = entry.getId();
+			status = entry.getStatus();
+			continue_from = entry.getCheckpointLine();
 			
 			/*
 			 * If status is "done", that would mean that particular file was stored successfully and no need to
@@ -112,7 +97,7 @@ public class FileContentController {
 						
 						
 						// Storing the above arraylist comprising of file_name, line_count and the line into the table.
-						file_content.add(new File_Content(filename,count,line)); 
+						file_content.add(new File_Content(filepath,count,line)); 
 					    
 					    // Storing in batches of size 10000 (sentences).
 					    if(count % 10000==0) {
@@ -120,7 +105,7 @@ public class FileContentController {
 					    service.fileSentenceInsert(file_content);
 					    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
 					    
-					    service.fileTrackingUpdate(id, count);
+					    service.fileTrackingUpdate(id, count, "Not done yet");
 					    file_content.clear(); 
 					    continue_from = count;
 					    }
@@ -133,30 +118,20 @@ public class FileContentController {
 				if(file_content.size()>0) {
 					service.fileSentenceInsert(file_content);
 				}
-				service.fileTrackingUpdate(id, count);
+				service.fileTrackingUpdate(id, count, "done");
 				}
 			else 
 			{ 
 				System.out.println("already done!");
 			}
+			
 		}
 		finally {
 			
 			sc.close();
 		}
 		
-//		return track_repository.findById(uniqueId);
 	}
 	
-//	@GetMapping("/trackingDetails")
-////	public List<File_Tracking> getFile_Tracking(){
-//////		return track_repository.findAll();
-////	}
-//	
-//	@GetMapping("/trackingDetails/{filename}")
-//	public Optional<File_Tracking> getFile_TrackingById(@PathVariable String filename){
-//		int id = hashValueOfFileName(filename);
-//		return track_repository.findById(id);
-//	}
-//	
+
 }
