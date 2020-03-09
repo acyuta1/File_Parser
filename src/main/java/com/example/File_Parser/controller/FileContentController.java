@@ -66,7 +66,7 @@ public class FileContentController {
 			executor.submit(()->{
 				
 						try {
-							service.parseFile(filepath.getFilepath(), id, status, continue_from);
+							service.parseFile(filepath.getFilepath(), id, status, continue_from, filepath.getBatch_size());
 						} catch (FileNotFoundException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();

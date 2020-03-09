@@ -28,14 +28,14 @@ public class FileContentService {
 	@Autowired
 	private FileTrackingRepository track_repository;
 	
-	public void fileSentenceInsert(List<File_Content> file_content) {
+	public void insertIntoFileContent(List<File_Content> file_content) {
 		/*
 		 * Will insert an Array of file_content objects into the cassandra database.
 		 */
 		repository.saveAll(file_content);
 	}
 	
-	public int fileTrackInsert(File_Tracking file_tracking) {
+	public int insertIntoFileTrack(File_Tracking file_tracking) {
 		/*
 		 * Will insert a new entry, to be tracked throughout the file upload process.
 		 */
@@ -54,7 +54,7 @@ public class FileContentService {
 		return repository.findByfile_nameAndLine_Num(filename, line_num);
 	}
 	
-	public void fileTrackingUpdate(int id, int count, FileTrackStatus status) {
+	public void updateFileTrackTable(int id, int count, FileTrackStatus status) {
 		/*
 		 * Updating the tracking table of a particular id.
 		 */
@@ -90,7 +90,7 @@ public class FileContentService {
 		 */
 		if(track_repository.findByFilename(filename)==null) {
 			File_Tracking entry = new File_Tracking(filename,0,FileTrackStatus.PENDING);
-			fileTrackInsert(entry);
+			insertIntoFileTrack(entry);
 			return entry;		
 		}
 		else {
@@ -99,7 +99,7 @@ public class FileContentService {
 		}
 	}
 	
-	public void parseFile(String filepath, int id, FileTrackStatus status, int continue_from) throws FileNotFoundException {
+	public void parseFile(String filepath, int id, FileTrackStatus status, int continue_from, int batch_size) throws FileNotFoundException {
 		/*
 		 * This function parses through the file in chunks of 10Mb. 
 		 * Stores the sentences in file_content table of cassandra and also
@@ -111,6 +111,7 @@ public class FileContentService {
 		
 		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 100*1024));
 		String fileName = getFileNameFromPath(filepath);
+		System.out.println(batch_size);
 		
 			// A delimiter which will serve as identifying parts of a paragraph into lines.
 				sc.useDelimiter("\\.");
@@ -127,15 +128,15 @@ public class FileContentService {
 							// Storing the above arraylist comprising of file_name, line_count and the line into the table.
 							file_content.add(new File_Content(fileName,count,line)); 	
 							
-						    if(count % 10000==0) {
+						    if(count % batch_size==0) {
 						 
 						    	// Storing in batches of size 10000 (sentences).   	
 //						    	long start = System.nanoTime();
-							    fileSentenceInsert(file_content);
+						    	insertIntoFileContent(file_content);
 //							    long time = System.nanoTime() - start;
 //							    System.out.println(time/1000000000);
 							    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
-							    fileTrackingUpdate(id, count, FileTrackStatus.PENDING);
+						    	updateFileTrackTable(id, count, FileTrackStatus.PENDING);
 							    
 							    // clear the content to avoid out of memory error.
 							    file_content.clear(); 
@@ -148,10 +149,10 @@ public class FileContentService {
 					 * To store remaining content or if the total number of lines was lesser than 10000:
 					 */
 					if(file_content.size()>0) {
-						fileSentenceInsert(file_content);
+						insertIntoFileContent(file_content);
 					}
 					// Final status to Done.
-					fileTrackingUpdate(id, count, FileTrackStatus.COMPLETED);
+					updateFileTrackTable(id, count, FileTrackStatus.COMPLETED);
 				
 				sc.close();
 			
