@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,10 @@ public class FileContentService {
 		 * To access tracking details using fileName, incase needed.
 		 */
 		return track_repository.findByFilename(filename);
+	}
+	
+	public File_Content getLineOfFile(String filename, int line_num) {
+		return repository.findByfile_nameAndLine_Num(filename, line_num);
 	}
 	
 	public void fileTrackingUpdate(int id, int count, FileTrackStatus status) {
