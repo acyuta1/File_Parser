@@ -4,11 +4,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.cassandra.core.AsyncCassandraOperations;
+import org.springframework.data.cassandra.core.AsyncCassandraTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.File_Parser.model.File_Content;
@@ -48,8 +54,14 @@ public class FileContentService {
 	    track_repository.save(entry);
 	}
 	
+	
 	public File_Tracking getFileStatusByID(int id) {
 		return track_repository.findById(id);
+	}
+	
+	public String getFileName(String filePath) {
+		String[] filePathSplit = filePath.split("\\\\");
+		return filePathSplit[filePathSplit.length-1];
 	}
 	
 	public File_Tracking getfileTrackingStatus(String filename) {
@@ -75,12 +87,18 @@ public class FileContentService {
 	}
 	
 	
+	
+	
 	public void ParseFile(String filepath, int id, String status, int continue_from) {
-		List<File_Content> file_content = new ArrayList<>();
+		
+		
+		List<File_Content> file_content = new ArrayList<>(10000);
 		int count = 0;
 		try {
 		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 100*1024));
-
+		String fileName = getFileName(filepath);
+		System.out.println(fileName);
+		
 			// A delimiter which will serve as identifying parts of a paragraph into lines.
 				sc.useDelimiter("\\.");
 				
@@ -95,6 +113,7 @@ public class FileContentService {
 				 */
 				
 				if(!(status.equals("done"))) {
+					int new_count = 0;
 					while(sc.hasNext()) {
 						
 						
@@ -103,19 +122,28 @@ public class FileContentService {
 					    
 					    // Continue from the checkpoint. 
 						if(count > continue_from) {
-		
+							
 							// Storing the above arraylist comprising of file_name, line_count and the line into the table.
-							file_content.add(new File_Content(filepath,count,line)); 
-						    
+				
+							
+							file_content.add(new File_Content(fileName,count,line)); 	
+							
 						    if(count % 10000==0) {
-						    // Storing in batches of size 10000 (sentences).
-						    
+						    	
+						    	// Storing in batches of size 10000 (sentences).
+						    	
+						    	
+						    	long start = System.nanoTime();
 							    fileSentenceInsert(file_content);
+							    long time = System.nanoTime() - start;
+							    System.out.println(time/1000000000);
 							    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
-							    
 							    fileTrackingUpdate(id, count, "Not done yet");
+							    
 							    file_content.clear(); 
 							    continue_from = count;
+							    
+							    
 						    }
 					    }
 					}
@@ -137,6 +165,7 @@ public class FileContentService {
 				sc.close();
 			}
 		catch (FileNotFoundException e) {
+			e.getStackTrace();
 			// TODO: handle exception
 		}
 			
