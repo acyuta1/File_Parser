@@ -39,18 +39,26 @@ public class FileContentController {
 	
 	@PreDestroy
 	public void shutdown() {
+		// To avoid memory leakage.
 		executor.shutdown();
 	}
 	
 	@PostMapping("/store-in-db")
 	@ResponseBody
-	public File_Tracking saveFileContent(@RequestBody FilePath filepath ) throws IOException {
-					
+	public File_Tracking saveFileContent(@RequestBody FilePath filepath ) throws IOException {	
+			/*
+			 * Tracking ID of the file-name provided will be obtained, which will be 
+			 * immediately returned to the user.
+			 * After which, a new thread will start the process of inserting into the database.
+			 * The tracking ID which was returned can then be used to track the status of the 
+			 * file upload.
+			 */
 			File_Tracking entry = service.getfileTrackingStatus(filepath.getFilepath());
 			int id = entry.getId();
 			String status = entry.getStatus();
 			int continue_from = entry.getCheckpointLine();
 			
+			// A new thread will take care of the file store process. 
 			executor.submit(()->{
 			service.ParseFile(filepath.getFilepath(), id, status, continue_from);
 			});
@@ -61,6 +69,7 @@ public class FileContentController {
 	
 	@GetMapping("/getStatus/{id}")
 	public File_Tracking getTrackStatus(@PathVariable("id") int id) {
+		// To track the status of file upload.
 		return service.getFileStatusByID(id);
 	}
 	

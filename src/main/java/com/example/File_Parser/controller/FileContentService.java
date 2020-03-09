@@ -4,17 +4,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.cassandra.core.AsyncCassandraOperations;
-import org.springframework.data.cassandra.core.AsyncCassandraTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.File_Parser.model.File_Content;
@@ -32,21 +26,30 @@ public class FileContentService {
 	private FileTrackingRepository track_repository;
 	
 	public void fileSentenceInsert(List<File_Content> file_content) {
+		/*
+		 * Will insert an Array of file_content objects into the cassandra database.
+		 */
 		repository.saveAll(file_content);
 	}
 	
 	public int fileTrackInsert(File_Tracking file_tracking) {
+		/*
+		 * Will insert a new entry, to be tracked throughout the file upload process.
+		 */
 		track_repository.save(file_tracking);
 		return file_tracking.getId();
 	}
 	
 	public File_Tracking fileTrackFindByFileName(String filename) {
+		/*
+		 * To access tracking details using fileName, incase needed.
+		 */
 		return track_repository.findByFilename(filename);
 	}
 	
 	public void fileTrackingUpdate(int id, int count, String status) {
 		/*
-		 * Updating the tracking table.
+		 * Updating the tracking table of a particular id.
 		 */
 		File_Tracking entry = track_repository.findById(id);
 		entry.setCheckpointLine(count);
@@ -56,29 +59,32 @@ public class FileContentService {
 	
 	
 	public File_Tracking getFileStatusByID(int id) {
+		/*
+		 * Will return the file_tracking object (a record) corresponding to a particular ID.
+		 */
 		return track_repository.findById(id);
 	}
 	
 	public String getFileName(String filePath) {
+		/*
+		 * Will extract and return the fileName from a path. 
+		 * For easier access in the file_content table.
+		 */
 		String[] filePathSplit = filePath.split("\\\\");
 		return filePathSplit[filePathSplit.length-1];
 	}
 	
 	public File_Tracking getfileTrackingStatus(String filename) {
 		/*
-		 * If ID of the file (hash value) is already present in our file_tracking table,
-			 * then we would just get hold of the "status" and the "checkpoint" columns of our table.
-			 * 
-			 * Else, we would make a new entry in the file_tracking table and initialize status to "not done yet"
-			 * and checkpoint to 0.
-			 * 
-			 * Returns the instance.
+		 * If ID is already present in our table, we will just return that record.
+		 * 
+		 * Otherwise, we will create a new entry, initialize the checkpoint to 0 and the status to
+		 * "Not done yet" and then, return the object to the used.
 		 */
 		if(track_repository.findByFilename(filename)==null) {
 			File_Tracking entry = new File_Tracking(filename,0,"Not done yet");
 			fileTrackInsert(entry);
-			return entry;
-			
+			return entry;		
 		}
 		else {
 			File_Tracking actualEntity = track_repository.findByFilename(filename);
@@ -86,11 +92,12 @@ public class FileContentService {
 		}
 	}
 	
-	
-	
-	
 	public void ParseFile(String filepath, int id, String status, int continue_from) {
-		
+		/*
+		 * This function parses through the file in chunks of 10Mb. 
+		 * Stores the sentences in file_content table of cassandra and also
+		 * updates the file_tracking table.
+		 */
 		
 		List<File_Content> file_content = new ArrayList<>(10000);
 		int count = 0;
@@ -103,20 +110,14 @@ public class FileContentService {
 				sc.useDelimiter("\\.");
 				
 				/*
-				 * fileTrackingInit of the service layer is used to initialize id, status and continue_from
-				 * long time = System.nanoTime() - start; 
-				 */
-				
-				/*
-				 * If status is "done", that would mean that particular file was stored successfully and no need to
-				 * proceed further.
+				 * If status is "done", that would mean that particular file was stored successfully 
+				 * and no need to proceed further.
 				 */
 				
 				if(!(status.equals("done"))) {
-					int new_count = 0;
 					while(sc.hasNext()) {
 						
-						
+						// Scan and increment as long as the count reaches the checkpoint value.
 					    String line = sc.next();
 					    count += 1;
 					    
@@ -124,26 +125,21 @@ public class FileContentService {
 						if(count > continue_from) {
 							
 							// Storing the above arraylist comprising of file_name, line_count and the line into the table.
-				
-							
 							file_content.add(new File_Content(fileName,count,line)); 	
 							
 						    if(count % 10000==0) {
-						    	
-						    	// Storing in batches of size 10000 (sentences).
-						    	
-						    	
-						    	long start = System.nanoTime();
+						 
+						    	// Storing in batches of size 10000 (sentences).   	
+//						    	long start = System.nanoTime();
 							    fileSentenceInsert(file_content);
-							    long time = System.nanoTime() - start;
-							    System.out.println(time/1000000000);
+//							    long time = System.nanoTime() - start;
+//							    System.out.println(time/1000000000);
 							    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
 							    fileTrackingUpdate(id, count, "Not done yet");
 							    
+							    // clear the content to avoid out of memory error.
 							    file_content.clear(); 
-							    continue_from = count;
-							    
-							    
+							    continue_from = count;					    
 						    }
 					    }
 					}
