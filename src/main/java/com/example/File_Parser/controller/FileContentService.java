@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.File_Parser.exception.RecordAlreadyExistsException;
+import com.example.File_Parser.model.FileTrackStatus;
 import com.example.File_Parser.model.File_Content;
 import com.example.File_Parser.model.File_Tracking;
 import com.example.File_Parser.repository.FileContentRepository;
@@ -48,7 +49,7 @@ public class FileContentService {
 		return track_repository.findByFilename(filename);
 	}
 	
-	public void fileTrackingUpdate(int id, int count, String status) {
+	public void fileTrackingUpdate(int id, int count, FileTrackStatus status) {
 		/*
 		 * Updating the tracking table of a particular id.
 		 */
@@ -83,7 +84,7 @@ public class FileContentService {
 		 * "Not done yet" and then, return the object to the used.
 		 */
 		if(track_repository.findByFilename(filename)==null) {
-			File_Tracking entry = new File_Tracking(filename,0,"Not done yet");
+			File_Tracking entry = new File_Tracking(filename,0,FileTrackStatus.PENDING);
 			fileTrackInsert(entry);
 			return entry;		
 		}
@@ -93,7 +94,7 @@ public class FileContentService {
 		}
 	}
 	
-	public void parseFile(String filepath, int id, String status, int continue_from) throws FileNotFoundException {
+	public void parseFile(String filepath, int id, FileTrackStatus status, int continue_from) throws FileNotFoundException {
 		/*
 		 * This function parses through the file in chunks of 10Mb. 
 		 * Stores the sentences in file_content table of cassandra and also
@@ -129,7 +130,7 @@ public class FileContentService {
 //							    long time = System.nanoTime() - start;
 //							    System.out.println(time/1000000000);
 							    // Also update the file_tracking column reflecting the latest checkpoint and the status. 
-							    fileTrackingUpdate(id, count, "Not done yet");
+							    fileTrackingUpdate(id, count, FileTrackStatus.PENDING);
 							    
 							    // clear the content to avoid out of memory error.
 							    file_content.clear(); 
@@ -145,7 +146,7 @@ public class FileContentService {
 						fileSentenceInsert(file_content);
 					}
 					// Final status to Done.
-					fileTrackingUpdate(id, count, "done");
+					fileTrackingUpdate(id, count, FileTrackStatus.COMPLETED);
 				
 				sc.close();
 			

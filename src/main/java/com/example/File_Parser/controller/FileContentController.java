@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.File_Parser.exception.RecordAlreadyExistsException;
 import com.example.File_Parser.model.FilePath;
-
+import com.example.File_Parser.model.FileTrackStatus;
 import com.example.File_Parser.model.File_Tracking;
 
 
@@ -33,6 +33,7 @@ public class FileContentController {
 	@PreDestroy
 	public void shutdown() {
 		// To avoid memory leakage.
+		System.out.println("yes");
 		executor.shutdown();
 	}
 	
@@ -48,13 +49,13 @@ public class FileContentController {
 			 */
 			File_Tracking entry = service.getfileTrackingStatus(filepath.getFilepath());
 			int id = entry.getId();
-			String status = entry.getStatus();
+			FileTrackStatus status = entry.getStatus();
 			String fileName = service.getFileNameFromPath(entry.getFilename());
 			int continue_from = entry.getCheckpointLine();
 			System.out.println(status);
 					
 			// A new thread will take care of the file store process. 
-			if(!(status.equals("done"))) {
+			if(!("COMPLETED".equalsIgnoreCase(status.name()))) {
 			executor.submit(()->{
 				
 						try {

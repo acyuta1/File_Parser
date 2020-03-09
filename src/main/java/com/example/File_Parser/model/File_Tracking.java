@@ -1,6 +1,7 @@
 package com.example.File_Parser.model;
 
 import javax.persistence.Entity;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -30,11 +31,12 @@ public class File_Tracking {
 	private int id;
 	private String filename ;
 	private int checkpointLine;
-	private String status;
+	@Enumerated
+	private FileTrackStatus status; 
 	
 	public File_Tracking() {}
 	
-	public File_Tracking(String filename, int checkpointLine, String status) {
+	public File_Tracking(String filename, int checkpointLine, FileTrackStatus status) {
 		// TODO Auto-generated constructor stub
 		this.setFilename(filename);
 		this.setCheckpointLine(checkpointLine);
@@ -67,11 +69,11 @@ public class File_Tracking {
 		this.checkpointLine = checkpointLine;
 	}
 
-	public String getStatus() {
+	public FileTrackStatus getStatus() {
 		return status;
 	}
 
-	public void setStatus(String status) {
+	public void setStatus(FileTrackStatus status) {
 		this.status = status;
 	}
 }
