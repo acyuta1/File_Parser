@@ -11,6 +11,7 @@ import java.util.Scanner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.File_Parser.exception.RecordAlreadyExistsException;
 import com.example.File_Parser.model.File_Content;
 import com.example.File_Parser.model.File_Tracking;
 import com.example.File_Parser.repository.FileContentRepository;
@@ -65,7 +66,7 @@ public class FileContentService {
 		return track_repository.findById(id);
 	}
 	
-	public String getFileName(String filePath) {
+	public String getFileNameFromPath(String filePath) {
 		/*
 		 * Will extract and return the fileName from a path. 
 		 * For easier access in the file_content table.
@@ -92,7 +93,7 @@ public class FileContentService {
 		}
 	}
 	
-	public void ParseFile(String filepath, int id, String status, int continue_from) {
+	public void parseFile(String filepath, int id, String status, int continue_from) throws FileNotFoundException {
 		/*
 		 * This function parses through the file in chunks of 10Mb. 
 		 * Stores the sentences in file_content table of cassandra and also
@@ -101,20 +102,13 @@ public class FileContentService {
 		
 		List<File_Content> file_content = new ArrayList<>(10000);
 		int count = 0;
-		try {
+		
 		Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(filepath)), 100*1024));
-		String fileName = getFileName(filepath);
-		System.out.println(fileName);
+		String fileName = getFileNameFromPath(filepath);
 		
 			// A delimiter which will serve as identifying parts of a paragraph into lines.
 				sc.useDelimiter("\\.");
-				
-				/*
-				 * If status is "done", that would mean that particular file was stored successfully 
-				 * and no need to proceed further.
-				 */
-				
-				if(!(status.equals("done"))) {
+
 					while(sc.hasNext()) {
 						
 						// Scan and increment as long as the count reaches the checkpoint value.
@@ -145,29 +139,15 @@ public class FileContentService {
 					}
 					
 					/*
-					 * To store remaining content and also if the total number of lines was lesser than 10000:
+					 * To store remaining content or if the total number of lines was lesser than 10000:
 					 */
 					if(file_content.size()>0) {
 						fileSentenceInsert(file_content);
 					}
 					// Final status to Done.
 					fileTrackingUpdate(id, count, "done");
-					}
-				else 
-				{ 
-					System.out.println("already done!");
-				}
 				
 				sc.close();
-			}
-		catch (FileNotFoundException e) {
-			e.getStackTrace();
-			// TODO: handle exception
-		}
 			
-		
 	}
-	
-	
-
 }

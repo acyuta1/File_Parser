@@ -1,12 +1,7 @@
 package com.example.File_Parser.controller;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,12 +16,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.File_Parser.exception.RecordAlreadyExistsException;
 import com.example.File_Parser.model.FilePath;
-import com.example.File_Parser.model.File_Content;
-import com.example.File_Parser.model.File_Tracking;
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.fasterxml.jackson.databind.util.JSONWrappedObject;
 
+import com.example.File_Parser.model.File_Tracking;
 
 
 @RestController
@@ -56,15 +49,27 @@ public class FileContentController {
 			File_Tracking entry = service.getfileTrackingStatus(filepath.getFilepath());
 			int id = entry.getId();
 			String status = entry.getStatus();
+			String fileName = service.getFileNameFromPath(entry.getFilename());
 			int continue_from = entry.getCheckpointLine();
-			
+			System.out.println(status);
+					
 			// A new thread will take care of the file store process. 
+			if(!(status.equals("done"))) {
 			executor.submit(()->{
-			service.ParseFile(filepath.getFilepath(), id, status, continue_from);
-			});
-		
-		return service.getfileTrackingStatus(filepath.getFilepath());
-		
+				
+						try {
+							service.parseFile(filepath.getFilepath(), id, status, continue_from);
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+				});
+			return entry;
+			} 
+			else {
+				throw new RecordAlreadyExistsException(fileName, id);
+			}
+	 
 	}
 	
 	@GetMapping("/getStatus/{id}")
