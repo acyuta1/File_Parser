@@ -59,7 +59,6 @@ public class FileContentController {
 			FileTrackStatus status = entry.getStatus();
 			String fileName = service.getFileNameFromPath(entry.getFilename());
 			int continue_from = entry.getCheckpointLine();
-			System.out.println(status);
 					
 			// A new thread will take care of the file store process. 
 			if(!("COMPLETED".equalsIgnoreCase(status.name()))) {
