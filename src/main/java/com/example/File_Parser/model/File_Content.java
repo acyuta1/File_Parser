@@ -1,6 +1,5 @@
 package com.example.File_Parser.model;
 
-import java.util.UUID;
 
 
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;

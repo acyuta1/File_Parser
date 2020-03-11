@@ -1,16 +1,13 @@
 package com.example.File_Parser.controller;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.annotation.PreDestroy;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.File_Parser.exception.RangeOutOfBounds;
 import com.example.File_Parser.exception.RecordAlreadyExistsException;
 import com.example.File_Parser.model.FilePath;
 import com.example.File_Parser.model.FileTrackStatus;
@@ -46,30 +42,30 @@ public class FileContentController {
 	
 	@PostMapping("/store-in-db")
 	@ResponseBody
-	public File_Tracking saveFileContent(@RequestBody FilePath filepath ) throws IOException {	
+	public File_Tracking saveFileContent(@RequestBody FilePath filepath ) throws FileNotFoundException {	
 			/*
-			 * Tracking ID of the file-name provided will be obtained, which will be 
-			 * immediately returned to the user.
-			 * After which, a new thread will start the process of inserting into the database.
-			 * The tracking ID which was returned can then be used to track the status of the 
-			 * file upload.
+			 * 1. Will check if the file actually exists in the filepath provided, 
+			 * 	if yes, a scanner object is returned.
+			 * 2. Then, we will obtain a file_tracking object.
+			 * 3. Also initialize important variables in the services class.
+			 * 4. Next, from the obtained file_tracking object we will check if the status is
+			 * 	"COMPLETED". We will proceed only if the status is NOT Completed.
+			 * 5. Else throw an exception.
 			 */
+			Scanner file_scanner = service.scanFile(filepath.getFilepath());
+			
 			File_Tracking entry = service.getfileTrackingStatus(filepath.getFilepath());
 			int id = entry.getId();
 			FileTrackStatus status = entry.getStatus();
 			String fileName = service.getFileNameFromPath(entry.getFilename());
 			int continue_from = entry.getCheckpointLine();
+			
+			service.initializeVars(fileName, filepath.getBatch_size(), filepath.getRetrieve_size());
 					
 			// A new thread will take care of the file store process. 
 			if(!("COMPLETED".equalsIgnoreCase(status.name()))) {
 			executor.submit(()->{
-				
-						try {
-							service.parseFile(filepath.getFilepath(), id, status, continue_from, filepath.getBatch_size());
-						} catch (FileNotFoundException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+				service.parseFile(file_scanner, id, status, continue_from); 
 				});
 			return entry;
 			} 
@@ -87,20 +83,12 @@ public class FileContentController {
 	
 	@GetMapping("/getContent")
 	public List<File_Content> getFileContent(@RequestParam Map<String,String> details){
-//		System.out.println(details.get("brand"));
+		/*
+		 * To retrieve contents of a file within a certain range.
+		 */
 		int start = Integer.parseInt(details.get("start"));
 		int stop = Integer.parseInt(details.get("stop"));
-		List<File_Content> file_content = new ArrayList<>(50);
-		if((stop-start)>50) {
-			throw new RangeOutOfBounds("The range is greater than 50");
-		} else {
-			for(int i=start;i<=stop;i++) {
-				file_content.add(service.getLineOfFile(details.get("filename"), i));
-			}
-		}
 		
-		return file_content;
+		return service.retrieveContent(start, stop);
 	}
-	
-
 }
