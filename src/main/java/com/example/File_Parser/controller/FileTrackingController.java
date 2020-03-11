@@ -13,7 +13,11 @@ import com.example.File_Parser.model.FileTracking;
 @Async
 @RequestMapping("/fileTrack")
 public class FileTrackingController {
-	
+	/**
+	 * Controller class for Model FileTracking. 
+	 * Endpoints:
+	 * 		to get the status of a file upload.
+	 */
 	@Autowired
 	private FileContentService service;
 	@Autowired
@@ -21,7 +25,9 @@ public class FileTrackingController {
 	
 	@GetMapping("/getStatus/{id}")
 	public FileTracking getTrackStatus(@PathVariable("id") int id) {
-		// To track the status of file upload.
+		/**
+		 * To track the status based on the path variable provided by the user.
+		 */
 		return trackService.getFileStatusByID(id);
 	}
 
