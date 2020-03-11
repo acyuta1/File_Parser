@@ -12,7 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 
 import com.example.File_Parser.controller.FileContentService;
 import com.example.File_Parser.model.FilePath;
-import com.example.File_Parser.model.File_Tracking;
+import com.example.File_Parser.model.FileTracking;
 
 public class FileContentControllerTests extends DemoApplicationTests {
 	
@@ -33,15 +33,13 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		String uri = "/store-in-db";
 		FilePath file_path = new FilePath();
 		file_path.setFilepath("C:\\Users\\achyutha.aluru\\Desktop\\Files\\test1.txt");
-		file_path.setBatch_size(10000);
-		file_path.setRetrieve_size(50);
 		String input = super.mapToJson(file_path);
 //		System.out.println(input);
 		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(input)).andReturn();
 		int status = mvcResult.getResponse().getStatus();
 		assertEquals(200, status);
 		String json_content = mvcResult.getResponse().getContentAsString();
-		File_Tracking file_details = super.mapFromJson(json_content, File_Tracking.class);
+		FileTracking file_details = super.mapFromJson(json_content, FileTracking.class);
 		id = file_details.getId();
 	}
 	
@@ -54,8 +52,7 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		String uri = "/store-in-db";
 		FilePath file_path = new FilePath();
 		file_path.setFilepath("C:\\Users\\achyutha.aluru\\Desktop\\Files\\test1.txt");
-		file_path.setBatch_size(10000);
-		file_path.setRetrieve_size(50);
+		
 		String input = super.mapToJson(file_path);
 //		System.out.println(input);
 		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(input)).andReturn();
@@ -85,7 +82,7 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		String uri = "/getContent";
 		LinkedMultiValueMap<String,String> details = new LinkedMultiValueMap<>();
 		FileContentService service = new FileContentService();
-		service.initializeVars("newfile_short.txt", 10, 10);
+//		service.initializeVars("newfile_short.txt", 10, 10);
 		details.add("filename", "newfile_short.txt");
 		details.add("start", "2");
 		details.add("stop", "8");
@@ -104,7 +101,7 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		String uri = "/getContent";
 		LinkedMultiValueMap<String,String> details = new LinkedMultiValueMap<>();
 		FileContentService service = new FileContentService();
-		service.initializeVars("newfile_short.txt", 10, 10);
+//		service.initializeVars("newfile_short.txt", 10, 10);
 		details.add("filename", "newfile_short.txt");
 		details.add("start", "2");
 		details.add("stop", "50");

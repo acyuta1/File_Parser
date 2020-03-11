@@ -24,7 +24,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class File_Tracking {
+public class FileTracking {
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -34,9 +34,9 @@ public class File_Tracking {
 	@Enumerated
 	private FileTrackStatus status; 
 	
-	public File_Tracking() {}
+	public FileTracking() {}
 	
-	public File_Tracking(String filename, int checkpointLine, FileTrackStatus status) {
+	public FileTracking(String filename, int checkpointLine, FileTrackStatus status) {
 		// TODO Auto-generated constructor stub
 		this.setFilename(filename);
 		this.setCheckpointLine(checkpointLine);

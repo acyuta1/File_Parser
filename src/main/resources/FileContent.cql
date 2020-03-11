@@ -1,0 +1,1 @@
+Create table FileContent (fileName text, lineNum int, line text, primary key(fileName, lineNum));
