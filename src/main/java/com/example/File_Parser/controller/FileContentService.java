@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,16 +16,14 @@ import com.example.File_Parser.exception.FileDoesNotExistException;
 import com.example.File_Parser.exception.RangeOutOfBoundsException;
 import com.example.File_Parser.model.FileContent;
 import com.example.File_Parser.model.FileTrackStatus;
-import com.example.File_Parser.model.FileTracking;
 import com.example.File_Parser.repository.FileContentRepository;
-import com.example.File_Parser.repository.FileTrackingRepository;
 
+/**
+ * Service Layer for {@link FileContentController} resource
+ */
 
 @Service
 public class FileContentService {
-	/**
-	 * Service Layer of the FileContentController.
-	 */
 	
 	@Autowired
 	private FileContentRepository repository;
@@ -41,10 +37,13 @@ public class FileContentService {
 	int retrieveSize;
 
 
+		/**
+		 * Method to return a scanner object.
+		 * @param filepath
+		 * @return Scanner object for the file provided. 
+		 */
 		public Scanner scanFile (String filepath) {
-			/**
-			 * Returns a new Scanner object from the filepath provided. 
-			 */
+
 			File file = new File(filepath);
 			Scanner sc = null;
 			
@@ -71,11 +70,13 @@ public class FileContentService {
 			return sc;
 		}
 		
+		/**
+		 * Method to extract the filename from a directory.
+		 * @param filePath
+		 * @return fileName
+		 */
 		public String getFileNameFromPath(String filePath) {
-			/**
-			 * Will extract and return the fileName from a path. 
-			 * For easier access in the file_content table.
-			 */
+			
 			String[] filePathSplit = filePath.split("\\\\");
 			
 			/*
@@ -86,24 +87,28 @@ public class FileContentService {
 			return filePathSplit[filePathSplit.length-1];
 		}
 	
-		public void insertIntoFileContent(List<FileContent> file_content) {
-			/**
-			 * Records to be inserted into the database (Cassandra) are streamed in parallel,
-			 * making use of the available cores and then inserted into the database.
-			 */
-			file_content.parallelStream().forEach(obj -> 
+		/**
+		 * Method to store the content of an Arraylist to FileContent table.
+		 * @param file_content
+		 */
+		public void insertIntoFileContent(List<FileContent> fileContent) {
+
+			fileContent.parallelStream().forEach(obj -> 
 			repository.save(obj));
 		}
 		
+	/**
+	 * Method to parse a file, store its content in Cassandra table and also update tracking table.
+	 * @param file_name
+	 * @param sc
+	 * @param id
+	 * @param status
+	 * @param continue_from
+	 */
 	public void parseFile(String file_name, Scanner sc, int id, FileTrackStatus status, int continue_from)  {
-		/**
-		 * This function scans through the file, the delimiter being ".", 
-		 * Stores the sentences in file_content table of cassandra and also
-		 * updates the file_tracking table.
-		 */
 		
 		// An arraylist, which will store the records until they are persisted into the database.
-		List<FileContent> file_content = new ArrayList<>(batchSize);
+		List<FileContent> fileContent = new ArrayList<>(batchSize);
 		
 		// Our table has a column, lineNum. Count will be used to represent these line numbers.
 		int count = 0;
@@ -128,12 +133,17 @@ public class FileContentService {
 						if(count > continue_from) {
 							
 							// Storing the above arraylist comprising of file_name, line_count and the line into the table.
-							file_content.add(new FileContent(file_name,count,line)); 	
-							System.out.println(count);
+							
+							FileContent fileContentInstance = new FileContent();
+							fileContentInstance.setFileName(file_name);
+							fileContentInstance.setLineNum(count);
+							fileContentInstance.setLine(line);
+							
+							fileContent.add(fileContentInstance);
 							
 						    if(count % batchSize==0) {
 						    	// Storing in batches of size 10000 (sentences).   	
-						    	insertIntoFileContent(file_content);
+						    	insertIntoFileContent(fileContent);
 
 						    	/*
 						    	 *  Also update the file_tracking column reflecting the latest 
@@ -142,7 +152,7 @@ public class FileContentService {
 						    	trackService.updateFileTrackTable(id, count, FileTrackStatus.PENDING);
 							  
 							    // clear the content to avoid out of memory error.
-							    file_content.clear(); 
+						    	fileContent.clear(); 
 							    continue_from = count;					    
 						    }
 					    }
@@ -151,8 +161,8 @@ public class FileContentService {
 					/*
 					 * To store remaining content or if the total number of lines was lesser than 10000:
 					 */
-					if(file_content.size()>0) {
-						insertIntoFileContent(file_content);
+					if(fileContent.size()>0) {
+						insertIntoFileContent(fileContent);
 					}
 					// Final status of that particular file's tracking status to *COMPLETED*.
 					trackService.updateFileTrackTable(id, count, FileTrackStatus.COMPLETED);
@@ -161,10 +171,13 @@ public class FileContentService {
 			
 	}
 	
+	/**
+	 * Method to retrieve the content of file existing in Cassandra database.
+	 * @param start - The starting line number
+	 * @param stop - The ending line number
+	 * @return - FileContent[] of objects lying between the range specified.
+	 */
 	public FileContent[] retrieveContent(int start, int stop) {
-		/**
-		 * Will retrieve a set of lines based on the start and stop parameters provided by the user.
-		 */
 		
 		/*
 		 * This array will hold the FileContent objects lying between a given start and stop.

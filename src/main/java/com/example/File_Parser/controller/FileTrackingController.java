@@ -9,25 +9,28 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.File_Parser.model.FileTracking;
 
+/**
+ * Controller class for {@link FileTracking} resource
+ */
+/**
+ * @author Achyutha.aluru
+ *
+ */
 @RestController
 @Async
 @RequestMapping("/fileTrack")
 public class FileTrackingController {
-	/**
-	 * Controller class for Model FileTracking. 
-	 * Endpoints:
-	 * 		to get the status of a file upload.
-	 */
-	@Autowired
-	private FileContentService service;
+	
 	@Autowired
 	private FileTrackingService trackService;
 	
+	/**
+	 * Method to track the status of file upload.
+	 * @param id
+	 * @return FileTracking object matching the ID provided.
+	 */
 	@GetMapping("/getStatus/{id}")
 	public FileTracking getTrackStatus(@PathVariable("id") int id) {
-		/**
-		 * To track the status based on the path variable provided by the user.
-		 */
 		return trackService.getFileStatusByID(id);
 	}
 

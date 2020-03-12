@@ -24,13 +24,13 @@ public class FileContent {
 	private String line;
 	
 	
-	public FileContent(String fileName, int lineNum, String line) {
-		// TODO Auto-generated constructor stub
-		this.setFileName(fileName);
-		this.setLineNum(lineNum);
-		this.setLine(line);
-		
-	}
+//	public FileContent(String fileName, int lineNum, String line) {
+//		// TODO Auto-generated constructor stub
+//		this.setFileName(fileName);
+//		this.setLineNum(lineNum);
+//		this.setLine(line);
+//		
+//	}
 
 
 	public String getFileName() {
