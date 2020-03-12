@@ -10,8 +10,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.LinkedMultiValueMap;
 
-import com.example.File_Parser.controller.FileContentService;
-import com.example.File_Parser.model.FileTracking;
+import com.example.file.parser.model.FileTracking;
+import com.example.file.parser.services.FileContentService;
 
 public class FileTrackingServiceTests extends DemoApplicationTests {
 	

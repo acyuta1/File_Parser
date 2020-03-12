@@ -1,4 +1,4 @@
-package com.example.File_Parser.exception;
+package com.example.file.parser.exception;
 
 import org.springframework.http.HttpStatus;
 

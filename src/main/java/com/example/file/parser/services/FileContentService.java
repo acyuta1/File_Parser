@@ -1,4 +1,4 @@
-package com.example.File_Parser.controller;
+package com.example.file.parser.services;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,11 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.example.File_Parser.exception.FileDoesNotExistException;
-import com.example.File_Parser.exception.RangeOutOfBoundsException;
-import com.example.File_Parser.model.FileContent;
-import com.example.File_Parser.model.FileTrackStatus;
-import com.example.File_Parser.repository.FileContentRepository;
+import com.example.file.parser.controller.FileContentController;
+import com.example.file.parser.exception.FileDoesNotExistException;
+import com.example.file.parser.exception.RangeOutOfBoundsException;
+import com.example.file.parser.model.FileContent;
+import com.example.file.parser.repository.FileContentRepository;
+import com.example.file.parser.utilities.FileTrackStatusEnum;
 
 /**
  * Service Layer for {@link FileContentController} resource
@@ -105,7 +106,7 @@ public class FileContentService {
 	 * @param status
 	 * @param continue_from
 	 */
-	public void parseFile(String file_name, Scanner sc, int id, FileTrackStatus status, int continue_from)  {
+	public void parseFile(String file_name, Scanner sc, int id, FileTrackStatusEnum status, int continue_from)  {
 		
 		// An arraylist, which will store the records until they are persisted into the database.
 		List<FileContent> fileContent = new ArrayList<>(batchSize);
@@ -149,7 +150,7 @@ public class FileContentService {
 						    	 *  Also update the file_tracking column reflecting the latest 
 						    	 *  checkpoint and the status still being, "pending". 
 						    	 */
-						    	trackService.updateFileTrackTable(id, count, FileTrackStatus.PENDING);
+						    	trackService.updateFileTrackTable(id, count, FileTrackStatusEnum.PENDING);
 							  
 							    // clear the content to avoid out of memory error.
 						    	fileContent.clear(); 
@@ -165,7 +166,7 @@ public class FileContentService {
 						insertIntoFileContent(fileContent);
 					}
 					// Final status of that particular file's tracking status to *COMPLETED*.
-					trackService.updateFileTrackTable(id, count, FileTrackStatus.COMPLETED);
+					trackService.updateFileTrackTable(id, count, FileTrackStatusEnum.COMPLETED);
 				
 				sc.close();
 			

@@ -1,4 +1,4 @@
-package com.example.File_Parser.model;
+package com.example.file.parser.model;
 
 
 

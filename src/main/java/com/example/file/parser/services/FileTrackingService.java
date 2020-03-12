@@ -1,11 +1,12 @@
-package com.example.File_Parser.controller;
+package com.example.file.parser.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.File_Parser.model.FileTrackStatus;
-import com.example.File_Parser.model.FileTracking;
-import com.example.File_Parser.repository.FileTrackingRepository;
+import com.example.file.parser.controller.FileTrackingController;
+import com.example.file.parser.model.FileTracking;
+import com.example.file.parser.repository.FileTrackingRepository;
+import com.example.file.parser.utilities.FileTrackStatusEnum;
 
 /**
  * Service Layer for {@link FileTrackingController} resource
@@ -42,7 +43,7 @@ public class FileTrackingService {
 		 * filename, 0 (checkpoint line), pending (status).
 		 */
 		if(track_repository.findByFilename(filename)==null) {
-			FileTracking entry = new FileTracking(filename,0,FileTrackStatus.PENDING);
+			FileTracking entry = new FileTracking(filename,0,FileTrackStatusEnum.PENDING);
 			insertIntoFileTrack(entry);
 			return entry;		
 		}
@@ -62,7 +63,7 @@ public class FileTrackingService {
 	 * @param count
 	 * @param status
 	 */
-	public void updateFileTrackTable(int id, int count, FileTrackStatus status) {
+	public void updateFileTrackTable(int id, int count, FileTrackStatusEnum status) {
 		
 		/*
 		 * Extract the record with matching ID,

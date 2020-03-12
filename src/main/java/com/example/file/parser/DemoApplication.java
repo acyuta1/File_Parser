@@ -1,4 +1,4 @@
-package com.example.File_Parser;
+package com.example.file.parser;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package com.example.File_Parser.repository;
+package com.example.file.parser.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,7 +7,7 @@ import org.springframework.data.cassandra.repository.CassandraRepository;
 import org.springframework.data.cassandra.repository.Query;
 import org.springframework.scheduling.annotation.Async;
 
-import com.example.File_Parser.model.FileContent;
+import com.example.file.parser.model.FileContent;
 
 public interface FileContentRepository extends CassandraRepository<FileContent, String>{
 //	List<File_Content> findByFile_Name(String file_name);

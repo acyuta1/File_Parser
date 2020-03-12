@@ -1,4 +1,4 @@
-package com.example.File_Parser.model;
+package com.example.file.parser.model;
 
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
@@ -6,6 +6,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.example.file.parser.utilities.FileTrackStatusEnum;
 
 //import org.springframework.data.cassandra.core.mapping.Table;
 
@@ -32,11 +34,11 @@ public class FileTracking {
 	private String filename ;
 	private int checkpointLine;
 	@Enumerated
-	private FileTrackStatus status; 
+	private FileTrackStatusEnum status; 
 	
 	public FileTracking() {}
 	
-	public FileTracking(String filename, int checkpointLine, FileTrackStatus status) {
+	public FileTracking(String filename, int checkpointLine, FileTrackStatusEnum status) {
 		// TODO Auto-generated constructor stub
 		this.setFilename(filename);
 		this.setCheckpointLine(checkpointLine);
@@ -69,11 +71,11 @@ public class FileTracking {
 		this.checkpointLine = checkpointLine;
 	}
 
-	public FileTrackStatus getStatus() {
+	public FileTrackStatusEnum getStatus() {
 		return status;
 	}
 
-	public void setStatus(FileTrackStatus status) {
+	public void setStatus(FileTrackStatusEnum status) {
 		this.status = status;
 	}
 }

@@ -1,4 +1,4 @@
-package com.example.File_Parser.controller;
+package com.example.file.parser.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.File_Parser.model.FileTracking;
+import com.example.file.parser.model.FileTracking;
+import com.example.file.parser.services.FileTrackingService;
 
 /**
  * Controller class for {@link FileTracking} resource
