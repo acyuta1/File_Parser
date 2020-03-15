@@ -20,28 +20,32 @@ import lombok.ToString;
 
 
 @Entity
-@Table(name="File_Tracking")
+@Table(name="Filetrack")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class FileTracking {
+public class Filetrack {
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private String filename ;
 	private int checkpointLine;
+	private int totalLinesPresent;
+	private float percentComplete;
 	@Enumerated
 	private FileTrackStatusEnum status; 
 	
-	public FileTracking() {}
+	public Filetrack() {}
 	
-	public FileTracking(String filename, int checkpointLine, FileTrackStatusEnum status) {
+	public Filetrack(String filename, int checkpointLine, int totalLinesPresent, int percentInt, FileTrackStatusEnum status) {
 		// TODO Auto-generated constructor stub
 		this.setFilename(filename);
 		this.setCheckpointLine(checkpointLine);
+		this.setTotalLinesPresent(totalLinesPresent);
+		this.setPercentComplete(percentInt);
 		this.setStatus(status);
 	}
 
@@ -77,5 +81,21 @@ public class FileTracking {
 
 	public void setStatus(FileTrackStatusEnum status) {
 		this.status = status;
+	}
+
+	public float getPercentComplete() {
+		return percentComplete;
+	}
+
+	public void setPercentComplete(float percentComplete) {
+		this.percentComplete = percentComplete;
+	}
+
+	public int getTotalLinesPresent() {
+		return totalLinesPresent;
+	}
+
+	public void setTotalLinesPresent(int totalLinesPresent) {
+		this.totalLinesPresent = totalLinesPresent;
 	}
 }

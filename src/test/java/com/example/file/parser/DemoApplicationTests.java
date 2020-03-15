@@ -1,4 +1,4 @@
-package com.example.File_Parser;
+package com.example.file.parser;
 
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

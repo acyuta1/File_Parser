@@ -1,12 +1,6 @@
 package com.example.file.parser.repository;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.cassandra.repository.CassandraRepository;
-import org.springframework.data.cassandra.repository.Query;
-import org.springframework.scheduling.annotation.Async;
-
 import com.example.file.parser.model.FileContent;
 
 public interface FileContentRepository extends CassandraRepository<FileContent, String>{

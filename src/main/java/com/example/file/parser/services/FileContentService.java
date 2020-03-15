@@ -2,12 +2,18 @@ package com.example.file.parser.services;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,6 +24,9 @@ import com.example.file.parser.exception.RangeOutOfBoundsException;
 import com.example.file.parser.model.FileContent;
 import com.example.file.parser.repository.FileContentRepository;
 import com.example.file.parser.utilities.FileTrackStatusEnum;
+import com.example.file.parser.utilities.UtilityFunctions;
+
+
 
 /**
  * Service Layer for {@link FileContentController} resource
@@ -34,42 +43,9 @@ public class FileContentService {
 	// getting hold of the Configured BatchSize and the RetrieveSize.
 	@Value("${batchSize}")
 	int batchSize;
-	@Value("${retrieveSize}")
-	int retrieveSize;
+	
+	Logger logger = LoggerFactory.getLogger(FileContentService.class);
 
-
-		/**
-		 * Method to return a scanner object.
-		 * @param filepath
-		 * @return Scanner object for the file provided. 
-		 */
-		public Scanner scanFile (String filepath) {
-
-			File file = new File(filepath);
-			Scanner sc = null;
-			
-			/*
-			 * Checks if a file actually exists.
-			 * If no, a custom exception exception with HTTP response 400 is thrown.
-			 * 
-			 */
-			if(!(file.exists())) {
-				throw new FileDoesNotExistException(filepath);
-			} else {
-				try {
-					/*
-					 *  Scanner object which reads a given file in 10MB chunks.
-					 *  This is to avoid out of memory exceptions.
-					 */
-					sc = new Scanner(new BufferedReader(new FileReader(file), 100*1024));
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			// The scanner object is returned. 
-			return sc;
-		}
 		
 		/**
 		 * Method to extract the filename from a directory.
@@ -92,12 +68,17 @@ public class FileContentService {
 		 * Method to store the content of an Arraylist to FileContent table.
 		 * @param file_content
 		 */
-		public void insertIntoFileContent(List<FileContent> fileContent) {
-
+		public String insertIntoFileContent(List<FileContent> fileContent) {
+			
+			logger.info("inserting records into FileContent table of cassandra");
 			fileContent.parallelStream().forEach(obj -> 
 			repository.save(obj));
+			return fileContent.get(0).getFileName();
 		}
 		
+	public float calculateRemaining (int total, int batchDone) {
+		return ((float)batchDone/total)*100;
+	}
 	/**
 	 * Method to parse a file, store its content in Cassandra table and also update tracking table.
 	 * @param file_name
@@ -106,9 +87,14 @@ public class FileContentService {
 	 * @param status
 	 * @param continue_from
 	 */
-	public void parseFile(String file_name, Scanner sc, int id, FileTrackStatusEnum status, int continue_from)  {
+	public void parseFile(String filepath, boolean getFileLines, int id, int continue_from)  {
 		
-		// An arraylist, which will store the records until they are persisted into the database.
+		logger.info("Inside parseFile function");
+		int totalLines = trackService.getTotalLines(id, getFileLines);
+		Scanner sc = UtilityFunctions.scanFile(filepath);
+		String fileName = getFileNameFromPath(filepath);
+		
+//		int totalLines = 171798;
 		List<FileContent> fileContent = new ArrayList<>(batchSize);
 		
 		// Our table has a column, lineNum. Count will be used to represent these line numbers.
@@ -135,8 +121,9 @@ public class FileContentService {
 							
 							// Storing the above arraylist comprising of file_name, line_count and the line into the table.
 							
+							
 							FileContent fileContentInstance = new FileContent();
-							fileContentInstance.setFileName(file_name);
+							fileContentInstance.setFileName(getFileNameFromPath(fileName));
 							fileContentInstance.setLineNum(count);
 							fileContentInstance.setLine(line);
 							
@@ -145,13 +132,16 @@ public class FileContentService {
 						    if(count % batchSize==0) {
 						    	// Storing in batches of size 10000 (sentences).   	
 						    	insertIntoFileContent(fileContent);
+						    	logger.info("uploaded "+batchSize+" no. of records to table with partition key "+fileName);
 
 						    	/*
 						    	 *  Also update the file_tracking column reflecting the latest 
 						    	 *  checkpoint and the status still being, "pending". 
 						    	 */
-						    	trackService.updateFileTrackTable(id, count, FileTrackStatusEnum.PENDING);
-							  
+						    	trackService.updateFileTrackTable(id, count,calculateRemaining(totalLines, count),
+						    			FileTrackStatusEnum.PENDING);
+						    	
+						    	logger.info("fileTracking table updated");
 							    // clear the content to avoid out of memory error.
 						    	fileContent.clear(); 
 							    continue_from = count;					    
@@ -164,10 +154,12 @@ public class FileContentService {
 					 */
 					if(fileContent.size()>0) {
 						insertIntoFileContent(fileContent);
+						logger.info("inserted remaining content of arraylist");
 					}
 					// Final status of that particular file's tracking status to *COMPLETED*.
-					trackService.updateFileTrackTable(id, count, FileTrackStatusEnum.COMPLETED);
-				
+					trackService.updateFileTrackTable(id, count, calculateRemaining(totalLines, count)
+							, FileTrackStatusEnum.COMPLETED);
+				logger.info("file upload complete");
 				sc.close();
 			
 	}
@@ -178,23 +170,27 @@ public class FileContentService {
 	 * @param stop - The ending line number
 	 * @return - FileContent[] of objects lying between the range specified.
 	 */
-	public FileContent[] retrieveContent(int start, int stop) {
+	public FileContent[] retrieveContent(String fileName, int start, int stop, int retrieveSize) {
 		
 		/*
 		 * This array will hold the FileContent objects lying between a given start and stop.
 		 */
+		logger.info("inside retrieve method, params provided are "
+				+ "file Name "+ fileName + " startline " + start + " stopline " + stop);
 		FileContent[] file_content = null;
 		
 		/*
 		 * If the range is greater than a preset configured retrieveSize, we will throw an exception.
 		 */
 		if((stop-start)>retrieveSize) {
+			logger.warn("Range provided is more than what is allowed :"+ retrieveSize);
 			throw new RangeOutOfBoundsException("The range is greater than " + retrieveSize);
 		} else {
 			// The content (lines) lying between the required parameters, will be returned.
-			file_content = repository.findByFileNameAndLineNumBetween("newfile_short.txt",start,stop);
+			file_content = repository.findByFileNameAndLineNumBetween(fileName,start,stop);
 			}
 			return file_content;
 		}
+	
 	}
 
