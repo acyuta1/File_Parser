@@ -4,7 +4,11 @@ import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
-
+/**
+ * FileContent table to store the content of a file.
+ * @author Achyutha.aluru
+ *
+ */
 @Table
 public class FileContent {
 	
@@ -14,15 +18,6 @@ public class FileContent {
 	private int lineNum;
 	private String line;
 	
-	
-//	public FileContent(String fileName, int lineNum, String line) {
-//		// TODO Auto-generated constructor stub
-//		this.setFileName(fileName);
-//		this.setLineNum(lineNum);
-//		this.setLine(line);
-//		
-//	}
-
 
 	public String getFileName() {
 		return fileName;

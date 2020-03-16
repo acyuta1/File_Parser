@@ -4,7 +4,10 @@ import org.springframework.http.HttpStatus;
 
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-
+/**
+ * Custom Exception to be thrown when duplicate file is inserted.
+ * @author Achyutha.aluru
+ */
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class RecordAlreadyExistsException extends RuntimeException {
 

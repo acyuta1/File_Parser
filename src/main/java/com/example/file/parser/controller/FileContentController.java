@@ -27,13 +27,8 @@ import com.example.file.parser.utilities.Constants;
 import com.example.file.parser.utilities.FileTrackStatusEnum;
 import com.example.file.parser.utilities.UtilityFunctions;
 
-
-
-
 /**
  * Controller class for {@link FileContent} resource
- */
-/**
  * @author Achyutha.aluru
  *
  */
@@ -55,9 +50,9 @@ public class FileContentController {
 	Logger logger = LoggerFactory.getLogger(FileContentController.class);
 	
 	/**
-	 * Method to initiate the parsing of a file.
-	 * @param filepath.
-	 * @return 
+	 * This function parses a given file and stores the content
+	 *  in cassandra database.
+	 * @param filepath 
 	 * @return A filetracking object to track status if the status of that object is PENDING,
 	 * 		   Otherwise, a {@link RecordAlreadyExistsException} is thrown.
 	 */
@@ -66,25 +61,21 @@ public class FileContentController {
 	public Filetrack saveFileContent(@RequestBody FileContent filepath )  {	
 			
 		logger.info("inside saveFileContent of FileContentController");
-			/*
-			 * First step would be to check if the file actually exists.
-			 */
-			/*
-			 * Next step would be to:
-			 * 	i. Either retrieve an object which already exists in the tracking table.
-			 * 	ii. or, Create a new record and return that object.
-			 */
-		
+			
+			// A tracking record corresponding to the file provided is obtained.
+			Scanner sc = UtilityFunctions.scanFile(filepath.getFileName());
 			Filetrack entry = trackService.getfileTrackingStatus(filepath.getFileName());
 			int id = entry.getId();
 			FileTrackStatusEnum status = entry.getStatus();
-			String fileName = service.getFileNameFromPath(entry.getFilename());
+			String fileName = UtilityFunctions.getFileNameFromPath(entry.getFilename());
 			int continue_from = entry.getCheckpointLine();
 					
 			/*
-			 * If the status of previously retrieved object is NOT completed,
-			 * that would mean it was failed and theres still some part of the file left (to be uploaded).
-			 * Hence, a new thread will take care of that process.
+			 * IF the status is COMPLETED, an exception is thrown.
+			 * Else, IF the status is NOT_STARTED_YET, the getFileLines is set to 
+			 * 		true and the parse process starts.
+			 * ELse, the getFileLines is set to false as the process was already 
+			 * 		started and the upload continues from last checkpoint.
 			 */
 			if(FileTrackStatusEnum.COMPLETED == status) {
 				logger.warn("Duplicate record insertion tried");
@@ -92,21 +83,16 @@ public class FileContentController {
 			} else if(FileTrackStatusEnum.NOT_STARTED_YET == status){
 				logger.warn("upload process will begin now.");
 				executor.submit(()->{	
-					service.parseFile(filepath.getFileName(), true, id, 0); 
+					service.parseFile(filepath.getFileName(), true, id, 0, sc); 
 					});
 				return entry;
 			} else {
 				logger.warn("upload process will continue from last checkpoint.");
 				executor.submit(()->{	
-					service.parseFile(filepath.getFileName(), false, id, continue_from); 
+					service.parseFile(filepath.getFileName(), false, id, continue_from, sc); 
 					});
 				return entry;
 			} 
-			
-			/*
-			 * If the status is COMPLETED, then that would mean a user is requesting for the 
-			 * storage of a duplicate file. So, appropriate exception is thrown.
-			 */
 	 
 	}
 	
@@ -119,8 +105,9 @@ public class FileContentController {
 	public FileContent[] getFileContent(@RequestParam Map<String,String> requestParams){
 		/*
 		 * Parameters required for this method are:
-		 * 	i. A start line
-		 * 	ii. A stop line.
+		 * 	i. FileName
+		 * 	ii. A start line
+		 * 	iii. A stop line.
 		 * All of the content BETWEEN these two parameters will be returned.
 		 */
 		String fileName = requestParams.get(Constants.FILE_NAME);

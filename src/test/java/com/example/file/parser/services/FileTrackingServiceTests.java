@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,11 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.example.file.parser.model.FileContent;
 import com.example.file.parser.model.Filetrack;
-import com.example.file.parser.repository.FileContentRepository;
 import com.example.file.parser.repository.FileTrackingRepository;
-import com.example.file.parser.services.FileContentService;
 import com.example.file.parser.services.FileTrackingService;
 import com.example.file.parser.utilities.FileTrackStatusEnum;
 

@@ -1,31 +1,19 @@
 package com.example.file.parser.controller;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.File;
 import java.nio.file.Files;
 
-import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.ResourceUtils;
 
 import com.example.file.parser.DemoApplicationTests;
-import com.example.file.parser.exception.FileDoesNotExistException;
-import com.example.file.parser.exception.RangeOutOfBoundsException;
-import com.example.file.parser.exception.RecordAlreadyExistsException;
-import com.example.file.parser.model.Filetrack;
-import com.example.file.parser.services.FileContentService;
-import com.google.common.base.Optional;
-
 
 public class FileContentControllerTests extends DemoApplicationTests {
 	
@@ -43,8 +31,8 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		 * HTTP response 200 is expected.
 		 */
 		String uri = "/fileContent/tasks/parse";
-		File file = new File(getClass().getResource("JSON_Inputs/Input").getFile());
-		File expectedOutputFile = new File(getClass().getResource("JSON_Inputs/ExpectedOutput").getFile());
+		File file = new File(getClass().getResource("../resources/Input").getFile());
+		File expectedOutputFile = new File(getClass().getResource("../resources/ExpectedOutput").getFile());
 		String content = new String(Files.readAllBytes(file.toPath()));
 		String expectedOuput = new String(Files.readAllBytes(expectedOutputFile.toPath()));
 		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andReturn();
@@ -62,7 +50,7 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		 * Expected response is 400.
 		 */
 		String uri = "/fileContent/tasks/parse";
-		File file = new File(getClass().getResource("JSON_Inputs/Input").getFile());
+		File file = new File(getClass().getResource("../resources/Input").getFile());
 		String expectedMessage = "File with fileName test.txt and ID 1 Already exists";
 		String content = new String(Files.readAllBytes(file.toPath()));
 		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andExpect(status().is4xxClientError()).andReturn();
@@ -82,7 +70,7 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		 * Expected response is 200.
 		 */
 		String uri = "/fileContent";
-		File file = new File(getClass().getResource("JSON_Inputs/toObtainExpectedOutput").getFile());
+		File file = new File(getClass().getResource("../resources/toObtainExpectedOutput").getFile());
 		String content = new String(Files.readAllBytes(file.toPath()));
 		LinkedMultiValueMap<String,String> details = new LinkedMultiValueMap<>();
 		details.add("filename", "test.txt");
@@ -116,16 +104,20 @@ public class FileContentControllerTests extends DemoApplicationTests {
         assertEquals(expectedMessage, responseMessage);
 	}
 	
+	@Test
 	public void saveNonExistentFile() throws Exception {
 		/*
 		 * Tries to save a non exsisting file.
 		 * Status expected 400.
 		 */
+		System.out.println("assssssssssssssssssssss");
 		String uri = "/fileContent/tasks/parse";
-		File file = new File(getClass().getResource("JSON_Inputs/NonExistentFile").getFile());
+		System.out.println(getClass().getResource("../resources/NonExistentFile")+"a0sia9si9asu9au");
+		File file = new File(getClass().getResource("../resources/NonExistentFile").getFile());
 		String content = new String(Files.readAllBytes(file.toPath()));
-		String expectedMessage = "The file with name NonExistentFile Does not exist";			
-		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andReturn();
+		String expectedMessage = "The file with name C:\\Users\\achyutha.aluru\\Desktop\\Files\\non_existing_file.txt Does not exist";	
+		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andExpect(status().is4xxClientError()).andReturn();
+//		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andReturn();
 		int status = mvcResult.getResponse().getStatus();
 		assertEquals(400, status);	
 		String responseMessage = mvcResult.getResolvedException().getMessage();

@@ -14,8 +14,6 @@ import com.example.file.parser.services.FileTrackingService;
 
 /**
  * Controller class for {@link FileTracking} resource
- */
-/**
  * @author Achyutha.aluru
  *
  */
@@ -30,7 +28,7 @@ public class FileTrackingController {
 	Logger logger = LoggerFactory.getLogger(FileTrackingController.class);
 	
 	/**
-	 * Method to track the status of file upload.
+	 * This function is used to obtain the tracking status of a file upload.
 	 * @param id
 	 * @return FileTracking object matching the ID provided.
 	 */

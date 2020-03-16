@@ -19,6 +19,11 @@ import lombok.Setter;
 import lombok.ToString;
 
 
+/**
+ * FileTrack table to track the status of a file upload.
+ * @author Achyutha.aluru
+ *
+ */
 @Entity
 @Table(name="Filetrack")
 @Getter

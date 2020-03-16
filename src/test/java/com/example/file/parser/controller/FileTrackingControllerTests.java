@@ -10,11 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.util.LinkedMultiValueMap;
 
 import com.example.file.parser.DemoApplicationTests;
-import com.example.file.parser.model.Filetrack;
-import com.example.file.parser.services.FileContentService;
 
 public class FileTrackingControllerTests extends DemoApplicationTests {
 	
@@ -33,7 +30,7 @@ public class FileTrackingControllerTests extends DemoApplicationTests {
 		 * Expected response is 200 if successful.
 		 */
 		String uri = "/fileTrack/getStatus/1";
-		File file = new File(getClass().getResource("JSON_Inputs/TrackStatusOutput").getFile());
+		File file = new File(getClass().getResource("../resources/TrackStatusOutput").getFile());
 		String content = new String(Files.readAllBytes(file.toPath()));
 		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.get(uri).accept(MediaType.APPLICATION_JSON_VALUE)).andReturn();
         int status = mvcResult.getResponse().getStatus();

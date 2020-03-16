@@ -25,9 +25,7 @@ public class UtilityFunctions {
 		 * If no, a custom exception exception with HTTP response 400 is thrown.
 		 * 
 		 */
-		if(!(file.exists())) {
-			throw new FileDoesNotExistException(filepath);
-		} else {
+		
 			try {
 				/*
 				 *  Scanner object which reads a given file in 10MB chunks.
@@ -49,7 +47,7 @@ public class UtilityFunctions {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} 
-		}
+		
 		// The scanner object is returned. 
 		return lineCount;
 	}
@@ -63,6 +61,10 @@ public class UtilityFunctions {
 
 		File file = new File(filepath);
 		Scanner sc = null;
+		if(!(file.exists())) {
+			throw new FileDoesNotExistException(filepath);
+		}
+			else {
 			try {
 				/*
 				 *  Scanner object which reads a given file in 10MB chunks.
@@ -74,8 +76,36 @@ public class UtilityFunctions {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			}
 		// The scanner object is returned. 
 		return sc;
+	}
+	
+	/**
+	 * This function returns the name from an entire full path. 
+	 * @param filePath
+	 * @return fileName
+	 */
+	public static String getFileNameFromPath(String filePath) {
+		
+		String[] filePathSplit = filePath.split("\\\\");
+		
+		/*
+		 *  We are only concerned about the last part of a path,
+		 *  which actually is the filename with its extension.
+		 *  ex: file.txt
+		 */
+		return filePathSplit[filePathSplit.length-1];
+	}
+	
+	/**
+	 * This function calculates the percentage of file upload done. 
+	 * @param total
+	 * @param batchDone
+	 * @return percentage completed.
+	 */
+	public static float calculateRemaining (int total, int batchDone) {
+		return ((float)batchDone/total)*100;
 	}
 }
 

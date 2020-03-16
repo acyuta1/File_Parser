@@ -25,19 +25,21 @@ public class FileTrackingService {
 
 	
 	/**
-	 * Method to insert into file tracking table.
+	 * Function to insert into filetracking record.
 	 * @param file_tracking
-	 * @return The ID of the filetracking object.
+	 * @return ID of filetracking object.
 	 */
-	public int insertIntoFileTrack(Filetrack file_tracking) {
-		logger.info("inserting into fileTracking table the file "+file_tracking.getFilename());
-		track_repository.save(file_tracking); 
+	public int insertIntoFileTrack(Filetrack fileTracking) {
+		logger.info("inserting into fileTracking table the file "+fileTracking.getFilename());
+		track_repository.save(fileTracking); 
 		// Returns the ID of the created filetracking record.
-		return file_tracking.getId();
+		return fileTracking.getId();
 	}
 	
 	/**
-	 * Method to get the status of file tracking upload.
+	 * Function which returns a : 
+	 * 		i. new filetracking object if the file appears for the first time
+	 * 		ii. existing filetracking object if already present in Database.
 	 * @param fileName
 	 * @return FileTracking object
 	 */
@@ -72,7 +74,7 @@ public class FileTrackingService {
 	} //done
 	
 	/**
-	 * Method to update the fileTracking status of a file.
+	 * This function updates the tracking table.
 	 * @param id
 	 * @param count
 	 * @param status
