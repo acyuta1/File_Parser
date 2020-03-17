@@ -2,8 +2,6 @@ package com.example.file.parser.controller;
 
 import java.util.Map;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +22,6 @@ import com.example.file.parser.model.Filetrack;
 import com.example.file.parser.services.FileContentService;
 import com.example.file.parser.services.FileTrackingService;
 import com.example.file.parser.utilities.Constants;
-import com.example.file.parser.utilities.FileTrackStatusEnum;
 import com.example.file.parser.utilities.UtilityFunctions;
 
 /**
@@ -45,8 +42,6 @@ public class FileContentController {
 	@Value("${retrieveSize}")
 	int retrieveSize;
 	
-	private ExecutorService executor = Executors.newSingleThreadExecutor();
-	
 	Logger logger = LoggerFactory.getLogger(FileContentController.class);
 	
 	/**
@@ -65,10 +60,6 @@ public class FileContentController {
 			// A tracking record corresponding to the file provided is obtained.
 			Scanner sc = UtilityFunctions.scanFile(filepath.getFileName());
 			Filetrack entry = trackService.getfileTrackingStatus(filepath.getFileName());
-			int id = entry.getId();
-			FileTrackStatusEnum status = entry.getStatus();
-			String fileName = UtilityFunctions.getFileNameFromPath(entry.getFilename());
-			int continue_from = entry.getCheckpointLine();
 					
 			/*
 			 * IF the status is COMPLETED, an exception is thrown.
@@ -77,22 +68,9 @@ public class FileContentController {
 			 * ELse, the getFileLines is set to false as the process was already 
 			 * 		started and the upload continues from last checkpoint.
 			 */
-			if(FileTrackStatusEnum.COMPLETED == status) {
-				logger.warn("Duplicate record insertion tried");
-				throw new RecordAlreadyExistsException(fileName, id);
-			} else if(FileTrackStatusEnum.NOT_STARTED_YET == status){
-				logger.warn("upload process will begin now.");
-				executor.submit(()->{	
-					service.parseFile(filepath.getFileName(), true, id, 0, sc); 
-					});
-				return entry;
-			} else {
-				logger.warn("upload process will continue from last checkpoint.");
-				executor.submit(()->{	
-					service.parseFile(filepath.getFileName(), false, id, continue_from, sc); 
-					});
-				return entry;
-			} 
+			
+			UtilityFunctions.startParsing(entry, sc, service, trackService);
+			return entry;
 	 
 	}
 	
@@ -110,6 +88,9 @@ public class FileContentController {
 		 * 	iii. A stop line.
 		 * All of the content BETWEEN these two parameters will be returned.
 		 */
+		logger.info("get request with parameters fileName: " + Constants.FILE_NAME + " start-line " + Constants.START_LINE
+				+ " stop-line " + Constants.STOP_LINE );
+		logger.info("retrieve size is set to " + retrieveSize);
 		String fileName = requestParams.get(Constants.FILE_NAME);
 		int start = Integer.parseInt(requestParams.get(Constants.START_LINE));
 		int stop = Integer.parseInt(requestParams.get(Constants.STOP_LINE));

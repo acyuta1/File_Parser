@@ -1,6 +1,8 @@
 package com.example.file.parser.utilities;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.doReturn;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,14 +15,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.example.file.parser.exception.FileFormatNotCompatibleException;
+import com.example.file.parser.exception.RangeOutOfBoundsException;
+import com.example.file.parser.exception.RecordAlreadyExistsException;
+import com.example.file.parser.model.Filetrack;
 import com.example.file.parser.repository.FileContentRepository;
+import com.example.file.parser.repository.FileTrackingRepository;
 import com.example.file.parser.services.FileContentService;
+import com.example.file.parser.services.FileTrackingService;
 
 public class UtilityFunctionTests {
 
+	
 	@InjectMocks
 	UtilityFunctions utilityFunctions;
-	
+	@Mock
+	UtilityFunctions utilityFunctions1;
 	
 	@BeforeEach
 	public void setup() {
@@ -49,13 +59,52 @@ public class UtilityFunctionTests {
 	}
 	
 	@Test 
-	public void when_file_path_is_given_should_return_scanner_object() {
+	public void when_file_path_with_wrong_extension_is_given_should_throw_exception() {
 		File file = new File(getClass().getResource("../resources/testlinecontent").getFile());
+//		Scanner response = ;
+//		String expectedWord = "this is line1";
+//		response.useDelimiter("\\.");
+//		assertEquals(expectedWord, response.next());
+//		response.close();
+		
+		assertThatThrownBy(()-> UtilityFunctions.scanFile(file.toPath().toString()))
+		.isInstanceOf(FileFormatNotCompatibleException.class);
+	}
+	
+	@Test 
+	public void when_file_path_is_given_should_return_scanner_object() {
+		File file = new File(getClass().getResource("../resources/testlinecontent.txt").getFile());
 		Scanner response = UtilityFunctions.scanFile(file.toPath().toString());
 		String expectedWord = "this is line1";
 		response.useDelimiter("\\.");
 		assertEquals(expectedWord, response.next());
 		response.close();
+	}
+	
+	@Test
+	public void when_same_file_with_same_modification_time_is_given_should_throw_error() {
+		Filetrack fileTrack = new Filetrack();
+		FileTrackingRepository repository;
+		FileTrackingService trackService = null;
+		FileContentService service = null;
+		fileTrack.setId(1);
+		fileTrack.setFilename("test");
+		fileTrack.setCheckpointLine(10000);
+		fileTrack.setPercentComplete(10.0f);
+		fileTrack.setTotalLinesPresent(100000);
+		fileTrack.setStatus(FileTrackStatusEnum.COMPLETED);
+		fileTrack.setModificationTime((long)0);
+		Scanner sc = null;
+		
+		assertThatThrownBy(()-> UtilityFunctions.startParsing(fileTrack, sc, service, trackService))
+		.isInstanceOf(RecordAlreadyExistsException.class);
+	}
+	
+	@Test
+	public void when_filepath_is_given_obtain_modification_time() {
+		File file = new File(getClass().getResource("../resources/testlinecontent").getFile());
+		
+		assertEquals(1584388304573L,(utilityFunctions.getModificationTime(file.toPath().toString())));
 	}
 	
 	

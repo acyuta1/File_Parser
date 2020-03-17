@@ -16,8 +16,6 @@ public class RangeOutOfBoundsException extends RuntimeException {
 	 */
 	private static final long serialVersionUID = -7744183672349860733L;
 
-	public RangeOutOfBoundsException() {}
-	
 	public RangeOutOfBoundsException(String message) {
 		super(message);
 	}

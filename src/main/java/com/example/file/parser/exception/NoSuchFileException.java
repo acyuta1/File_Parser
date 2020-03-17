@@ -9,16 +9,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * @author Achyutha.aluru
  */
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-public class FileDoesNotExistException extends RuntimeException {
+public class NoSuchFileException extends RuntimeException {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 8036878919802524764L;
 	
-	public FileDoesNotExistException() {}
-	
-	public FileDoesNotExistException(String fileName) {
+	public NoSuchFileException(String fileName) {
 		super("The file with name " + fileName + " Does not exist");
 	}
 	

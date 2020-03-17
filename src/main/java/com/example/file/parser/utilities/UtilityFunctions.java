@@ -7,25 +7,65 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.example.file.parser.exception.FileDoesNotExistException;
+import com.example.file.parser.exception.NoSuchFileException;
+import com.example.file.parser.exception.FileFormatNotCompatibleException;
+import com.example.file.parser.exception.RecordAlreadyExistsException;
+import com.example.file.parser.model.Filetrack;
+import com.example.file.parser.services.FileContentService;
+import com.example.file.parser.services.FileTrackingService;
 
 public class UtilityFunctions {
-	Logger logger = LoggerFactory.getLogger(UtilityFunctions.class);
+	static Logger logger = LoggerFactory.getLogger(UtilityFunctions.class);
 
+	private static ExecutorService executor = Executors.newSingleThreadExecutor();
+	
+	public static void startParsing(Filetrack filetrack, Scanner sc, FileContentService service, FileTrackingService trackService) {
+		logger.info("File to be parsed: " + filetrack.getFilename() + " and status: " + filetrack.getStatus());
+		
+		if(FileTrackStatusEnum.COMPLETED == filetrack.getStatus()) {
+			logger.warn("Duplicate record insertion tried, looking for modification time.");
+			System.out.println(getModificationTime(filetrack.getFilename()));
+			if(getModificationTime(filetrack.getFilename()).equals(filetrack.getModificationTime())) {
+				logger.warn("File is unchanged");
+				throw new RecordAlreadyExistsException(filetrack.getFilename(), filetrack.getId());
+			}
+			else {
+				logger.info("New modification time, altering contents of Database to reflect the same.");
+			trackService.setModificationTime(filetrack.getId(), getModificationTime(filetrack.getFilename()));
+			
+			executor.submit(()->{	
+				service.parseFile(filetrack.getFilename(), true, filetrack.getId(), filetrack.getCheckpointLine(), sc); 
+				});
+			}
+		} else if(FileTrackStatusEnum.NOT_STARTED_YET == filetrack.getStatus()){
+			logger.info("upload process will begin now.");
+			
+				executor.submit(()->{	
+					service.parseFile(filetrack.getFilename(), true, filetrack.getId(), 0, sc); 
+					});
+						
+	}
+		else if(FileTrackStatusEnum.PENDING == filetrack.getStatus() || FileTrackStatusEnum.FAILED == filetrack.getStatus()){
+			logger.info("upload process will continue from last checkpoint.");
+			executor.submit(()->{	
+				service.parseFile(filetrack.getFilename(), false, filetrack.getId(), filetrack.getCheckpointLine(), sc); 
+				});
+		}
+	}
 	
 	public static int getFileDetails(String filepath) {
-		File file = new File(filepath);
 		int lineCount = 0;
 		/*
 		 * Checks if a file actually exists.
 		 * If no, a custom exception exception with HTTP response 400 is thrown.
 		 * 
 		 */
-		
+		logger.info("Process to fetch Line Count of the file " + filepath + " will begin.");
 			try {
 				/*
 				 *  Scanner object which reads a given file in 10MB chunks.
@@ -49,6 +89,7 @@ public class UtilityFunctions {
 			} 
 		
 		// The scanner object is returned. 
+		logger.info("Line count of file " + filepath + " is " + lineCount);
 		return lineCount;
 	}
 	
@@ -58,11 +99,16 @@ public class UtilityFunctions {
 	 * @return Scanner object for the file provided. 
 	 */
 	public static Scanner scanFile (String filepath) {
-
+		
 		File file = new File(filepath);
 		Scanner sc = null;
+		if(!(getFileNameFromPath(filepath).contains(".txt"))) {
+			logger.warn("Incorrect file type provided. Cannot be parsed!");
+			throw new FileFormatNotCompatibleException(filepath);
+		}
 		if(!(file.exists())) {
-			throw new FileDoesNotExistException(filepath);
+			logger.warn("File in the specified directory could not be found :" + filepath);
+			throw new NoSuchFileException(filepath);
 		}
 			else {
 			try {
@@ -95,6 +141,7 @@ public class UtilityFunctions {
 		 *  which actually is the filename with its extension.
 		 *  ex: file.txt
 		 */
+		logger.info("filename with extension is obtained.");
 		return filePathSplit[filePathSplit.length-1];
 	}
 	
@@ -105,7 +152,14 @@ public class UtilityFunctions {
 	 * @return percentage completed.
 	 */
 	public static float calculateRemaining (int total, int batchDone) {
+		logger.info("Calculating the total percentage of upload completed.");
 		return ((float)batchDone/total)*100;
+	}
+	
+	public static Long getModificationTime(String filepath) {
+		logger.info("Fetching last modified time of the file provided.");
+		File file = new File(filepath);
+		return file.lastModified();
 	}
 }
 

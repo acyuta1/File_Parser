@@ -1,6 +1,8 @@
 package com.example.file.parser.services;
 
 import org.slf4j.LoggerFactory;
+
+
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -50,7 +52,7 @@ public class FileTrackingService {
 		 * we will create a new entry with the initial parameters: 
 		 * filename, 0 (checkpoint line), pending (status).
 		 */
-	
+		Long modifiedTime = UtilityFunctions.getModificationTime(filename);
 		if(track_repository.findByFilename(filename)==null) {
 			Filetrack entry = new Filetrack();
 			entry.setFilename(filename);
@@ -58,6 +60,8 @@ public class FileTrackingService {
 			entry.setTotalLinesPresent(0);
 			entry.setPercentComplete(0);
 			entry.setStatus(FileTrackStatusEnum.NOT_STARTED_YET);
+			entry.setErrorMessage("None");
+			entry.setModificationTime(modifiedTime);
 			insertIntoFileTrack(entry);
 			logger.info("new filetrack status with name "+filename+" created");
 			return entry;		
@@ -79,12 +83,13 @@ public class FileTrackingService {
 	 * @param count
 	 * @param status
 	 */
-	public void updateFileTrackTable(int id, int count, float percentDone, FileTrackStatusEnum status) {
+	public void updateFileTrackTable(int id, int count, float percentDone, String errorMessage, FileTrackStatusEnum status) {
 		logger.info("updating file tracking table with id ");
 		Filetrack entry = track_repository.findById(id);
 		entry.setCheckpointLine(count);
 		entry.setPercentComplete(percentDone);
 	    entry.setStatus(status);
+	    entry.setErrorMessage(errorMessage);
 	    track_repository.save(entry);
 	}
 	
@@ -133,6 +138,13 @@ public class FileTrackingService {
 	 */
 	public Filetrack getFileStatusByID(int id) {
 		return track_repository.findById(id);
+	}
+	
+	public void setModificationTime(int id, Long newModTime) {
+		Filetrack entry = track_repository.findById(id);
+		logger.info("setting new modification time to record with id: " + id + " and name " + entry.getFilename());
+		entry.setModificationTime(newModTime);
+		track_repository.save(entry);
 	}
 
 }

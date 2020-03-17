@@ -40,19 +40,12 @@ public class Filetrack {
 	private int checkpointLine;
 	private int totalLinesPresent;
 	private float percentComplete;
+	private String errorMessage;
 	@Enumerated
-	private FileTrackStatusEnum status; 
+	private FileTrackStatusEnum status;
+	private Long modificationTime;
 	
 	public Filetrack() {}
-	
-	public Filetrack(String filename, int checkpointLine, int totalLinesPresent, int percentInt, FileTrackStatusEnum status) {
-		// TODO Auto-generated constructor stub
-		this.setFilename(filename);
-		this.setCheckpointLine(checkpointLine);
-		this.setTotalLinesPresent(totalLinesPresent);
-		this.setPercentComplete(percentInt);
-		this.setStatus(status);
-	}
 
 	public int getId() {
 		return id;
@@ -103,4 +96,21 @@ public class Filetrack {
 	public void setTotalLinesPresent(int totalLinesPresent) {
 		this.totalLinesPresent = totalLinesPresent;
 	}
+
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	public void setErrorMessage(String errorMessage) {
+		this.errorMessage = errorMessage;
+	}
+
+	public Long getModificationTime() {
+		return modificationTime;
+	}
+
+	public void setModificationTime(Long modificationTime) {
+		this.modificationTime = modificationTime;
+	}
+
 }

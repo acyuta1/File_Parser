@@ -8,8 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.cassandra.CassandraConnectionFailureException;
 import org.springframework.stereotype.Service;
 
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.example.file.parser.controller.FileContentController;
 import com.example.file.parser.exception.RangeOutOfBoundsException;
 import com.example.file.parser.model.FileContent;
@@ -57,16 +59,17 @@ public class FileContentService {
 	 * @param id
 	 * @param continue_from
 	 */
-	public void parseFile(String filepath, boolean getFileLines, int id, int continue_from, Scanner sc)  {
+	public void parseFile(String filepath, boolean getFileLines, int id, int continue_from, Scanner sc) {
 		
-		logger.info("Inside parseFile function");
+		logger.info("Inside parseFile function with arguments filePath" + filepath 
+				+ "getFileLines " + getFileLines + " id " + id + " checkpoint Line " + continue_from );
 		int totalLines = trackService.getTotalLines(id, getFileLines);
 		String fileName = UtilityFunctions.getFileNameFromPath(filepath);
 		List<FileContent> fileContent = new ArrayList<>(batchSize);
 		
 		// Our table has a column, lineNum. Count will be used to represent these line numbers.
 		int count = 0;
-		
+		try {
 			// A delimiter which will serve as identifying parts of a paragraph into lines.
 				sc.useDelimiter("\\.");
 
@@ -88,7 +91,7 @@ public class FileContentService {
 							
 							// Storing the above arraylist comprising of file_name, line_count and the line into the table.
 							
-							
+							logger.info("Reached checkpoint line, will begin upload process.");
 							FileContent fileContentInstance = new FileContent();
 							fileContentInstance.setFileName(UtilityFunctions.getFileNameFromPath(fileName));
 							fileContentInstance.setLineNum(count);
@@ -106,7 +109,7 @@ public class FileContentService {
 						    	 *  checkpoint and the status still being, "pending". 
 						    	 */
 						    	trackService.updateFileTrackTable(id, count,UtilityFunctions.calculateRemaining(totalLines, count),
-						    			FileTrackStatusEnum.PENDING);
+						    			"None",FileTrackStatusEnum.PENDING);
 						    	
 						    	logger.info("fileTracking table updated");
 							    // clear the content to avoid out of memory error.
@@ -124,11 +127,28 @@ public class FileContentService {
 						logger.info("inserted remaining content of arraylist");
 					}
 					// Final status of that particular file's tracking status to *COMPLETED*.
-					trackService.updateFileTrackTable(id, count, UtilityFunctions.calculateRemaining(totalLines, count)
-							, FileTrackStatusEnum.COMPLETED);
+					trackService.updateFileTrackTable(id, count, UtilityFunctions.calculateRemaining(totalLines, count),
+							"None",FileTrackStatusEnum.COMPLETED);
 				logger.info("file upload complete");
 				sc.close();
+		}
+		catch (CassandraConnectionFailureException e) {
+			String errorMessage = "CassandraConnectionFailureException";
+			trackService.updateFileTrackTable(id, count, UtilityFunctions.calculateRemaining(totalLines, count), 
+					errorMessage, FileTrackStatusEnum.FAILED);
 			
+		} 
+		catch (NoHostAvailableException e) {
+			String errorMessage = "NoHostAvailableException";
+			trackService.updateFileTrackTable(id, count, UtilityFunctions.calculateRemaining(totalLines, count), 
+					errorMessage, FileTrackStatusEnum.FAILED);
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+			String errorMessage = "Something went wrong!";
+			trackService.updateFileTrackTable(id, count, UtilityFunctions.calculateRemaining(totalLines, count), 
+					errorMessage, FileTrackStatusEnum.FAILED);
+		} 
 	}
 	
 	/**

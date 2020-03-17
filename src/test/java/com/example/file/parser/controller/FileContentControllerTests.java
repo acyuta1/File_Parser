@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.LinkedMultiValueMap;
 
 import com.example.file.parser.DemoApplicationTests;
+import com.example.file.parser.utilities.UtilityFunctions;
 
 public class FileContentControllerTests extends DemoApplicationTests {
 	
@@ -51,7 +52,7 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		 */
 		String uri = "/fileContent/tasks/parse";
 		File file = new File(getClass().getResource("../resources/Input").getFile());
-		String expectedMessage = "File with fileName test.txt and ID 1 Already exists";
+		String expectedMessage = "File with fileName C:\\Professional\\Java Project Files Work\\Files\\test.txt and ID 1 Already exists";
 		String content = new String(Files.readAllBytes(file.toPath()));
 		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andExpect(status().is4xxClientError()).andReturn();
 		int status = mvcResult.getResponse().getStatus();
@@ -110,14 +111,11 @@ public class FileContentControllerTests extends DemoApplicationTests {
 		 * Tries to save a non exsisting file.
 		 * Status expected 400.
 		 */
-		System.out.println("assssssssssssssssssssss");
 		String uri = "/fileContent/tasks/parse";
-		System.out.println(getClass().getResource("../resources/NonExistentFile")+"a0sia9si9asu9au");
 		File file = new File(getClass().getResource("../resources/NonExistentFile").getFile());
 		String content = new String(Files.readAllBytes(file.toPath()));
-		String expectedMessage = "The file with name C:\\Users\\achyutha.aluru\\Desktop\\Files\\non_existing_file.txt Does not exist";	
+		String expectedMessage = "The file with name C:\\Professional\\Java Project Files Work\\Files\\non_existing_file.txt Does not exist";	
 		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andExpect(status().is4xxClientError()).andReturn();
-//		MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post(uri).contentType(MediaType.APPLICATION_JSON_VALUE).content(content)).andReturn();
 		int status = mvcResult.getResponse().getStatus();
 		assertEquals(400, status);	
 		String responseMessage = mvcResult.getResolvedException().getMessage();

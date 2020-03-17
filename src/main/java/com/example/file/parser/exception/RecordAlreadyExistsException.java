@@ -15,8 +15,6 @@ public class RecordAlreadyExistsException extends RuntimeException {
 	 * 
 	 */
 	private static final long serialVersionUID = -3583261722292568113L;
-
-	public RecordAlreadyExistsException() {}
 	
 	public RecordAlreadyExistsException(String fileName, int id) {
 		super("File with fileName "+fileName+" and ID "+id+" Already exists");

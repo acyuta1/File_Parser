@@ -104,6 +104,25 @@ public class FileTrackingServiceTests {
 		
 	}
 	
+	@Test
+	public void get_entry_when_id_is_given() {
+		Filetrack fileTrack = new Filetrack();
+		fileTrack.setId(1);
+		fileTrack.setFilename("test");
+		fileTrack.setCheckpointLine(10000);
+		fileTrack.setPercentComplete(10.0f);
+		fileTrack.setTotalLinesPresent(100000);
+		fileTrack.setStatus(FileTrackStatusEnum.PENDING);
+		doReturn(fileTrack).when(repository).findById(1);
+		
+		Filetrack entry = fileTrackingService.getFileStatusByID(1);
+		assertThat(entry.getFilename()).isSameAs("test");
+		assertEquals(10.0f, entry.getPercentComplete());
+		assertEquals(FileTrackStatusEnum.PENDING, entry.getStatus());
+		assertEquals(10000, entry.getCheckpointLine());
+		
+	}
+	
 	
 	
 
