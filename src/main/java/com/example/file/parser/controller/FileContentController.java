@@ -69,7 +69,7 @@ public class FileContentController {
 			 * 		started and the upload continues from last checkpoint.
 			 */
 			
-			UtilityFunctions.startParsing(entry, sc, service, trackService);
+			Filetrack responseEntry = UtilityFunctions.startParsing(entry, sc, service, trackService);
 			return entry;
 	 
 	}

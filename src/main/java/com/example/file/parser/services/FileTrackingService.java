@@ -144,6 +144,7 @@ public class FileTrackingService {
 		Filetrack entry = track_repository.findById(id);
 		logger.info("setting new modification time to record with id: " + id + " and name " + entry.getFilename());
 		entry.setModificationTime(newModTime);
+		entry.setStatus(FileTrackStatusEnum.PENDING);
 		track_repository.save(entry);
 	}
 

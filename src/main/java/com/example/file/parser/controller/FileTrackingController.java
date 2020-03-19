@@ -37,5 +37,4 @@ public class FileTrackingController {
 		logger.info("tracking status of file with id: "+id);
 		return trackService.getFileStatusByID(id);
 	}
-
 }

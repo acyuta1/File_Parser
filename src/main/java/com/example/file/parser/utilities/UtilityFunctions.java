@@ -24,7 +24,7 @@ public class UtilityFunctions {
 
 	private static ExecutorService executor = Executors.newSingleThreadExecutor();
 	
-	public static void startParsing(Filetrack filetrack, Scanner sc, FileContentService service, FileTrackingService trackService) {
+	public static Filetrack startParsing(Filetrack filetrack, Scanner sc, FileContentService service, FileTrackingService trackService) {
 		logger.info("File to be parsed: " + filetrack.getFilename() + " and status: " + filetrack.getStatus());
 		
 		if(FileTrackStatusEnum.COMPLETED == filetrack.getStatus()) {
@@ -41,6 +41,7 @@ public class UtilityFunctions {
 			executor.submit(()->{	
 				service.parseFile(filetrack.getFilename(), true, filetrack.getId(), filetrack.getCheckpointLine(), sc); 
 				});
+			return filetrack;
 			}
 		} else if(FileTrackStatusEnum.NOT_STARTED_YET == filetrack.getStatus()){
 			logger.info("upload process will begin now.");
@@ -48,14 +49,16 @@ public class UtilityFunctions {
 				executor.submit(()->{	
 					service.parseFile(filetrack.getFilename(), true, filetrack.getId(), 0, sc); 
 					});
-						
+			return filetrack;
 	}
 		else if(FileTrackStatusEnum.PENDING == filetrack.getStatus() || FileTrackStatusEnum.FAILED == filetrack.getStatus()){
 			logger.info("upload process will continue from last checkpoint.");
 			executor.submit(()->{	
 				service.parseFile(filetrack.getFilename(), false, filetrack.getId(), filetrack.getCheckpointLine(), sc); 
 				});
+			return filetrack;
 		}
+		return filetrack;
 	}
 	
 	public static int getFileDetails(String filepath) {
